@@ -1,15 +1,18 @@
 #include "particle.h"
+#include <algorithm>
 
-Particle::Particle(const ImVec2& position, const float& radius, const ImVec2& velocity, const ImVec2& acceleration)
+float Particle::radius;
+
+Particle::Particle(const ImVec2& position, const ImVec2& velocity, const ImVec2& acceleration)
 {
     this->position = position;
-    this->radius = radius;
     this->velocity = velocity;
     this->acceleration = acceleration;
+    Particle::radius = std::min(ImGui::GetWindowWidth(), ImGui::GetWindowHeight()) / 64.0;
 }
 
 
 void Particle::draw() 
 {
-    ImGui::GetWindowDrawList()->AddCircle(position, radius, color);
+    ImGui::GetWindowDrawList()->AddCircleFilled(position, Particle::radius, color);
 }

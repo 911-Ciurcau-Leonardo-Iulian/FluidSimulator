@@ -17,7 +17,7 @@ void FluidSimulatorWindow::draw(ImGuiIO& io)
     ImU32 bgColor = ImGui::GetColorU32(style.Colors[ImGuiCol_WindowBg]);
     ImGui::GetWindowDrawList()->AddLine(rectPos, {rectPos.x + rectSize.x, rectPos.y}, bgColor);
 
-    Particle particle({70, 200}, 30, {0, 0}, {0, 0});
+    Particle particle({70, 200});
 
     particle.draw();
 

@@ -14,12 +14,14 @@
 #CXX = g++
 #CXX = clang++
 
-EXE = example_glfw_opengl3
+EXE = fluidSimulator
 IMGUI_DIR = ../..
-SOURCES := $(wildcard $(SRC_DIR)/**/.cpp)
+OWN_SOURCES := main.cpp fluidSimulatorWindow.cpp particle.cpp
+SOURCES := $(OWN_SOURCES)
 SOURCES += $(IMGUI_DIR)/imgui.cpp $(IMGUI_DIR)/imgui_demo.cpp $(IMGUI_DIR)/imgui_draw.cpp $(IMGUI_DIR)/imgui_tables.cpp $(IMGUI_DIR)/imgui_widgets.cpp
 SOURCES += $(IMGUI_DIR)/backends/imgui_impl_glfw.cpp $(IMGUI_DIR)/backends/imgui_impl_opengl3.cpp
 OBJS = $(addsuffix .o, $(basename $(notdir $(SOURCES))))
+OBJS_TO_REMOVE = $(addsuffix .o, $(basename $(notdir $(OWN_SOURCES))))
 UNAME_S := $(shell uname -s)
 LINUX_GL_LIBS = -lGL
 
@@ -86,4 +88,4 @@ $(EXE): $(OBJS)
 	$(CXX) -o $@ $^ $(CXXFLAGS) $(LIBS)
 
 clean:
-	rm -f $(EXE) $(OBJS)
+	rm -f $(EXE) $(OBJS_TO_REMOVE)
