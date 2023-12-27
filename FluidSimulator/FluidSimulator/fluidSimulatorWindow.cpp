@@ -1,4 +1,5 @@
 #include "fluidSimulatorWindow.h"
+#include "particle.h"
 
 void FluidSimulatorWindow::draw(ImGuiIO& io)
 {
@@ -15,6 +16,10 @@ void FluidSimulatorWindow::draw(ImGuiIO& io)
     ImGuiStyle& style = ImGui::GetStyle();
     ImU32 bgColor = ImGui::GetColorU32(style.Colors[ImGuiCol_WindowBg]);
     ImGui::GetWindowDrawList()->AddLine(rectPos, {rectPos.x + rectSize.x, rectPos.y}, bgColor);
+
+    Particle particle({70, 200}, 30, {0, 0}, {0, 0});
+
+    particle.draw();
 
     ImGui::End();
 }
