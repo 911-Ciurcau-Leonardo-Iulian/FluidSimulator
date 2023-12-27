@@ -1,5 +1,15 @@
 #include "fluidSimulatorWindow.h"
-#include "particle.h"
+#include <time.h>
+
+FluidSimulatorWindow::FluidSimulatorWindow()
+{
+    srand(time(NULL));
+
+    for (auto& particle : FluidSimulatorWindow::particles) 
+    {
+        particle = Particle({rand() % 400 + 400, rand() % 300});
+    }
+}
 
 void FluidSimulatorWindow::draw(ImGuiIO& io)
 {
@@ -17,9 +27,10 @@ void FluidSimulatorWindow::draw(ImGuiIO& io)
     ImU32 bgColor = ImGui::GetColorU32(style.Colors[ImGuiCol_WindowBg]);
     ImGui::GetWindowDrawList()->AddLine(rectPos, {rectPos.x + rectSize.x, rectPos.y}, bgColor);
 
-    Particle particle({70, 200});
-
-    particle.draw();
+    for (auto& particle : FluidSimulatorWindow::particles) 
+    {
+        particle.draw();
+    }
 
     ImGui::End();
 }

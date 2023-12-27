@@ -1,9 +1,11 @@
 #pragma once
 #include "imgui.h"
+#include "particle.h"
 
 class FluidSimulatorWindow {
 private:
-    FluidSimulatorWindow() {}
+    Particle particles[100];
 public:
-    static void draw(ImGuiIO& io);
+    FluidSimulatorWindow();
+    void draw(ImGuiIO& io);
 };

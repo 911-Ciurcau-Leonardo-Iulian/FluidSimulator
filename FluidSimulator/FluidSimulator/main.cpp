@@ -110,6 +110,7 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    FluidSimulatorWindow fluidSimulatorWindow;
 
     // Main loop
 #ifdef __EMSCRIPTEN__
@@ -142,7 +143,7 @@ int main(int, char**)
             ImGui::SetNextWindowSizeConstraints(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImVec2(static_cast<float>(width), static_cast<float>(height)));
             ImGui::SetNextWindowPos(ImVec2(0, 0));
 
-            FluidSimulatorWindow::draw(io);
+            fluidSimulatorWindow.draw(io);
         }
 
         // Rendering
