@@ -7,7 +7,7 @@ FluidSimulatorWindow::FluidSimulatorWindow()
 
     for (auto& particle : FluidSimulatorWindow::particles) 
     {
-        particle = Particle({rand() % 400 + 400, rand() % 300});
+        particle = Particle({(float) (rand() % 400 + 400), (float) (rand() % 300)});
     }
 }
 
