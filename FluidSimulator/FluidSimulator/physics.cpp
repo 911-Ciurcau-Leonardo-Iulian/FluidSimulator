@@ -1,10 +1,6 @@
 #include "physics.h"
-#include "physics_vector2d.h"
-#include "physics_vector3d.h"
 #include <vector>
-#include <imgui.h>
 #include <math.h>
-#include <tuple>
 
 static const int NumThreads = 64;
 
@@ -59,13 +55,13 @@ static const ImU32 hashK1 = 15823;
 static const ImU32 hashK2 = 9737333;
 
 // Convert floating point position into an integer cell coordinate
-PhysicsVector2D<int> GetCell2D(PhysicsVector2D<float> position, float radius)
+PhysicsVector2D<int> Physics::GetCell2D(PhysicsVector2D<float> position, float radius)
 {
     return (PhysicsVector2D<int>) PhysicsVector2D<float>::floor(position / radius);
 }
 
 // Hash cell coordinate to a single unsigned integer
-ImU32 HashCell2D(PhysicsVector2D<int>  cell)
+ImU32 Physics::HashCell2D(PhysicsVector2D<int>  cell)
 {
     cell = (PhysicsVector2D<int>)cell;
     ImU32 a = cell.x * hashK1;
@@ -73,14 +69,14 @@ ImU32 HashCell2D(PhysicsVector2D<int>  cell)
     return (a + b);
 }
 
-ImU32 KeyFromHash(ImU32 hash, ImU32 tableSize)
+ImU32 Physics::KeyFromHash(ImU32 hash, ImU32 tableSize)
 {
     return hash % tableSize;
 }
 
 
 
-float SmoothingKernelPoly6(float dst, float radius)
+float Physics::SmoothingKernelPoly6(float dst, float radius)
 {
     if (dst < radius)
     {
@@ -90,7 +86,7 @@ float SmoothingKernelPoly6(float dst, float radius)
     return 0;
 }
 
-float SpikyKernelPow3(float dst, float radius)
+float Physics::SpikyKernelPow3(float dst, float radius)
 {
     if (dst < radius)
     {
@@ -100,7 +96,7 @@ float SpikyKernelPow3(float dst, float radius)
     return 0;
 }
 
-float SpikyKernelPow2(float dst, float radius)
+float Physics::SpikyKernelPow2(float dst, float radius)
 {
     if (dst < radius)
     {
@@ -110,7 +106,7 @@ float SpikyKernelPow2(float dst, float radius)
     return 0;
 }
 
-float DerivativeSpikyPow3(float dst, float radius)
+float Physics::DerivativeSpikyPow3(float dst, float radius)
 {
     if (dst <= radius)
     {
@@ -120,7 +116,7 @@ float DerivativeSpikyPow3(float dst, float radius)
     return 0;
 }
 
-float DerivativeSpikyPow2(float dst, float radius)
+float Physics::DerivativeSpikyPow2(float dst, float radius)
 {
     if (dst <= radius)
     {
@@ -130,32 +126,32 @@ float DerivativeSpikyPow2(float dst, float radius)
     return 0;
 }
 
-float DensityKernel(float dst, float radius)
+float Physics::DensityKernel(float dst, float radius)
 {
     return SpikyKernelPow2(dst, radius);
 }
 
-float NearDensityKernel(float dst, float radius)
+float Physics::NearDensityKernel(float dst, float radius)
 {
     return SpikyKernelPow3(dst, radius);
 }
 
-float DensityDerivative(float dst, float radius)
+float Physics::DensityDerivative(float dst, float radius)
 {
     return DerivativeSpikyPow2(dst, radius);
 }
 
-float NearDensityDerivative(float dst, float radius)
+float Physics::NearDensityDerivative(float dst, float radius)
 {
     return DerivativeSpikyPow3(dst, radius);
 }
 
-float ViscosityKernel(float dst, float radius)
+float Physics::ViscosityKernel(float dst, float radius)
 {
     return SmoothingKernelPoly6(dst, smoothingRadius);
 }
 
-PhysicsVector2D<float> CalculateDensity(PhysicsVector2D<float> pos)
+PhysicsVector2D<float> Physics::CalculateDensity(PhysicsVector2D<float> pos)
 {
     PhysicsVector2D<int> originCell = GetCell2D(pos, smoothingRadius);
     float sqrRadius = smoothingRadius * smoothingRadius;
@@ -196,17 +192,17 @@ PhysicsVector2D<float> CalculateDensity(PhysicsVector2D<float> pos)
     return PhysicsVector2D<float>(density, nearDensity);
 }
 
-float PressureFromDensity(float density)
+float Physics::PressureFromDensity(float density)
 {
     return (density - targetDensity) * pressureMultiplier;
 }
 
-float NearPressureFromDensity(float nearDensity)
+float Physics::NearPressureFromDensity(float nearDensity)
 {
     return nearPressureMultiplier * nearDensity;
 }
 
-PhysicsVector2D<float> ExternalForces(PhysicsVector2D<float> pos, PhysicsVector2D<float> velocity)
+PhysicsVector2D<float> Physics::ExternalForces(PhysicsVector2D<float> pos, PhysicsVector2D<float> velocity)
 {
     // Gravity
     PhysicsVector2D<float> gravityAccel = PhysicsVector2D<float>(0, gravity);
@@ -233,7 +229,7 @@ PhysicsVector2D<float> ExternalForces(PhysicsVector2D<float> pos, PhysicsVector2
 }
 
 
-void HandleCollisions(ImU32 particleIndex)
+void Physics::HandleCollisions(ImU32 particleIndex)
 {
     PhysicsVector2D<float> pos = Positions[particleIndex];
     PhysicsVector2D<float> vel = Velocities[particleIndex];
@@ -274,11 +270,11 @@ void HandleCollisions(ImU32 particleIndex)
     Velocities[particleIndex] = vel;
 }
 
-void ExternalForces(PhysicsVector3D<ImU32> id)
+void Physics::ExternalForces(PhysicsVector3D<ImU32> id)
 {
     if (id.x >= numParticles) return;
 
-    // External forces (gravity and input interaction)
+    // External forces Physics::(gravity and input interaction)
     Velocities[id.x] += ExternalForces(Positions[id.x], Velocities[id.x]) * deltaTime;
 
     // Predict
@@ -287,7 +283,7 @@ void ExternalForces(PhysicsVector3D<ImU32> id)
 }
 
 
-void UpdateSpatialHash(PhysicsVector3D<ImU32> id)
+void Physics::UpdateSpatialHash(PhysicsVector3D<ImU32> id)
 {
 	if (id.x >= numParticles) return;
 
@@ -302,7 +298,7 @@ void UpdateSpatialHash(PhysicsVector3D<ImU32> id)
 }
 
 
-void CalculateDensities(PhysicsVector3D<ImU32> id)
+void Physics::CalculateDensities(PhysicsVector3D<ImU32> id)
 {
     if (id.x >= numParticles) return;
 
@@ -311,7 +307,7 @@ void CalculateDensities(PhysicsVector3D<ImU32> id)
 }
 
 
-void CalculatePressureForce(PhysicsVector3D<ImU32> id)
+void Physics::CalculatePressureForce(PhysicsVector3D<ImU32> id)
 {
     if (id.x >= numParticles) return;
 
@@ -376,7 +372,7 @@ void CalculatePressureForce(PhysicsVector3D<ImU32> id)
 
 
 
-void CalculateViscosity(PhysicsVector3D<ImU32> id)
+void Physics::CalculateViscosity(PhysicsVector3D<ImU32> id)
 {
     if (id.x >= numParticles) return;
 
@@ -424,7 +420,7 @@ void CalculateViscosity(PhysicsVector3D<ImU32> id)
 }
 
 
-void UpdatePositions(PhysicsVector3D<ImU32> id)
+void Physics::UpdatePositions(PhysicsVector3D<ImU32> id)
 {
     if (id.x >= numParticles) return;
 

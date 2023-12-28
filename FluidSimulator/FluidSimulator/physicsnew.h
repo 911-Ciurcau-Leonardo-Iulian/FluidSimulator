@@ -4,7 +4,6 @@
 
 class Physics
 {
-public:
     PhysicsVector2D<int> GetCell2D(PhysicsVector2D<float> position, float radius);
 
     ImU32 HashCell2D(PhysicsVector2D<int>  cell);
