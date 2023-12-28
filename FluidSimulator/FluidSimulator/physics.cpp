@@ -181,7 +181,7 @@ PhysicsVector2D<float> CalculateDensity(PhysicsVector2D<float> pos)
             ImU32 neighbourIndex = indexData[0];
             PhysicsVector2D<float> neighbourPos = PredictedPositions[neighbourIndex];
             PhysicsVector2D<float> offsetToNeighbour = neighbourPos - pos;
-            float sqrDstToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
+            float sqrDstToNeighbour = PhysicsVector2D<float>::dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
             if (sqrDstToNeighbour > sqrRadius) continue;
@@ -214,7 +214,7 @@ PhysicsVector2D<float> ExternalForces(PhysicsVector2D<float> pos, PhysicsVector2
     // Input interactions modify gravity
     if (interactionInputStrength != 0) {
         PhysicsVector2D<float> inputPointOffset = interactionInputPoint - pos;
-        float sqrDst = dot(inputPointOffset, inputPointOffset);
+        float sqrDst = PhysicsVector2D<float>::dot(inputPointOffset, inputPointOffset);
         if (sqrDst < interactionInputRadius * interactionInputRadius)
         {
             float dst = sqrt(sqrDst);
@@ -240,7 +240,7 @@ void HandleCollisions(ImU32 particleIndex)
 
     // Keep particle inside bounds
     const PhysicsVector2D<float> halfSize = boundsSize * 0.5;
-    PhysicsVector2D<float> edgeDst = halfSize - abs(pos);
+    PhysicsVector2D<float> edgeDst = halfSize - PhysicsVector2D<float>::abs(pos);
 
     if (edgeDst.x <= 0)
     {
@@ -255,7 +255,7 @@ void HandleCollisions(ImU32 particleIndex)
 
     // Collide particle against the test obstacle
     const PhysicsVector2D<float> obstacleHalfSize = obstacleSize * 0.5;
-    PhysicsVector2D<float> obstacleEdgeDst = obstacleHalfSize - abs(pos - obstacleCentre);
+    PhysicsVector2D<float> obstacleEdgeDst = obstacleHalfSize - PhysicsVector2D<float>::abs(pos - obstacleCentre);
 
     if (obstacleEdgeDst.x >= 0 && obstacleEdgeDst.y >= 0)
     {
@@ -289,12 +289,16 @@ void ExternalForces(PhysicsVector3D<ImU32> id)
 
 void UpdateSpatialHash(PhysicsVector3D<ImU32> id)
 {
-    if (id.x >= numParticles) return;
+	if (id.x >= numParticles) return;
 
-    // Reset offsets
-    SpatialOffsets[id.x] = numParticles;tuple
-    ImU32 key = KeyFromHash(hash, numParticles);
-    SpatialIndices[id.x] = uint3(index, hash, key);
+	// Reset offsets
+	SpatialOffsets[id.x] = numParticles;
+	// Update index buffer
+	ImU32 index = id.x;
+	PhysicsVector2D<int> cell = GetCell2D(PredictedPositions[index], smoothingRadius);
+	ImU32 hash = HashCell2D(cell);
+	ImU32 key = KeyFromHash(hash, numParticles);
+	SpatialIndices[id.x] = PhysicsVector3D<ImU32>(index, hash, key);
 }
 
 
@@ -343,7 +347,7 @@ void CalculatePressureForce(PhysicsVector3D<ImU32> id)
 
             PhysicsVector2D<float> neighbourPos = PredictedPositions[neighbourIndex];
             PhysicsVector2D<float> offsetToNeighbour = neighbourPos - pos;
-            float sqrDstToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
+            float sqrDstToNeighbour = PhysicsVector2D<float>::dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
             if (sqrDstToNeighbour > sqrRadius) continue;
@@ -405,7 +409,7 @@ void CalculateViscosity(PhysicsVector3D<ImU32> id)
 
             PhysicsVector2D<float> neighbourPos = PredictedPositions[neighbourIndex];
             PhysicsVector2D<float> offsetToNeighbour = neighbourPos - pos;
-            float sqrDstToNeighbour = dot(offsetToNeighbour, offsetToNeighbour);
+            float sqrDstToNeighbour = PhysicsVector2D<float>::dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
             if (sqrDstToNeighbour > sqrRadius) continue;

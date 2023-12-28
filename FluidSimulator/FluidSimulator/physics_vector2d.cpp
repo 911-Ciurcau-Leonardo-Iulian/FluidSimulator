@@ -5,5 +5,9 @@ PhysicsVector2D<T>::PhysicsVector2D() : x(0), y(0)
 {}
 
 template<typename T>
+PhysicsVector2D<T>::PhysicsVector2D(T scalar) : x(scalar), y(scalar)
+{}
+
+template<typename T>
 PhysicsVector2D<T>::PhysicsVector2D(T x, T y) : x(x), y(y)
 {}
