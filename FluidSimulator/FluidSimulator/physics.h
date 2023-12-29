@@ -1,13 +1,18 @@
-#include "physics_vector2d.h"
-#include "physics_vector3d.h"
+#include "Vec2.h"
 #include <imgui.h>
+
+struct SpatialEntry {
+    unsigned int index;
+    unsigned int hash;
+    unsigned int key;
+};
 
 class Physics
 {
 public:
-    PhysicsVector2D<int> GetCell2D(PhysicsVector2D<float> position, float radius);
+    Int2 GetCell2D(Float2 position, float radius);
 
-    ImU32 HashCell2D(PhysicsVector2D<int>  cell);
+    ImU32 HashCell2D(Int2 cell);
 
     ImU32 KeyFromHash(ImU32 hash, ImU32 tableSize);
 
@@ -31,25 +36,25 @@ public:
 
     float ViscosityKernel(float dst, float radius);
 
-    PhysicsVector2D<float> CalculateDensity(PhysicsVector2D<float> pos);
+    Float2 CalculateDensity(Float2 pos);
 
     float PressureFromDensity(float density);
 
     float NearPressureFromDensity(float nearDensity);
 
-    PhysicsVector2D<float> ExternalForces(PhysicsVector2D<float> pos, PhysicsVector2D<float> velocity);
+    Float2 ExternalForces(Float2 pos, Float2 velocity);
 
     void HandleCollisions(ImU32 particleIndex);
 
-    void ExternalForces(PhysicsVector3D<ImU32> id);
+    void ExternalForces(SpatialEntry id);
 
-    void UpdateSpatialHash(PhysicsVector3D<ImU32> id);
+    void UpdateSpatialHash(SpatialEntry id);
 
-    void CalculateDensities(PhysicsVector3D<ImU32> id);
+    void CalculateDensities(SpatialEntry id);
 
-    void CalculatePressureForce(PhysicsVector3D<ImU32> id);
+    void CalculatePressureForce(SpatialEntry id);
 
-    void CalculateViscosity(PhysicsVector3D<ImU32> id);
+    void CalculateViscosity(SpatialEntry id);
 
-    void UpdatePositions(PhysicsVector3D<ImU32> id);
+    void UpdatePositions(SpatialEntry id);
 };

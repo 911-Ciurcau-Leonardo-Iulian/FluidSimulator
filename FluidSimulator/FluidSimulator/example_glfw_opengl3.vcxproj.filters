@@ -34,6 +34,18 @@
     <ClCompile Include="..\..\backends\imgui_impl_opengl3.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="fluidSimulatorWindow.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="particle.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="physics.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="Vec2.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -54,6 +66,10 @@
     <ClInclude Include="..\..\backends\imgui_impl_opengl3_loader.h">
       <Filter>sources</Filter>
     </ClInclude>
+    <ClInclude Include="fluidSimulatorWindow.h" />
+    <ClInclude Include="particle.h" />
+    <ClInclude Include="physics.h" />
+    <ClInclude Include="Vec2.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
