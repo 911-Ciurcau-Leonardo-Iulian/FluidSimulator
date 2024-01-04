@@ -46,6 +46,15 @@
     <ClCompile Include="Vec2.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="GPU\ComputeShader.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\glad.c">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\MathConstants.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -70,6 +79,11 @@
     <ClInclude Include="particle.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="Vec2.h" />
+    <ClInclude Include="GPU\ComputeShader.h" />
+    <ClInclude Include="GPU\glad.h" />
+    <ClInclude Include="GPU\khrplatform.h" />
+    <ClInclude Include="GPU\MathConstants.h" />
+    <ClInclude Include="GPU\GeneralSettings.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
