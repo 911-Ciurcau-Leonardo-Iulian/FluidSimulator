@@ -9,7 +9,7 @@ static void CheckCompileErrors(unsigned int shader, bool program_type)
 {
     int success;
     char infoLog[1024];
-    if (program_type)
+    if (!program_type)
     {
         glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
         if (!success)
@@ -31,13 +31,13 @@ static void CheckCompileErrors(unsigned int shader, bool program_type)
     }
 }
 
-ComputeShader::ComputeShader(const char* path) {
+ComputeShader::ComputeShader(const char* path, unsigned int _group_size_x, unsigned int _group_size_y, unsigned int _group_size_z) {
     char* file_allocation = (char*)malloc(sizeof(char) * MAX_SHADER_SIZE);
     std::ifstream file_stream(path);
     file_stream.read(file_allocation, MAX_SHADER_SIZE);
 
-    if (file_stream.good()) {
-        size_t read_count = file_stream.gcount();
+    size_t read_count = file_stream.gcount();
+    if (read_count != -1) {
         unsigned int shader_id = glCreateShader(GL_COMPUTE_SHADER);
         int shader_size = read_count;
         glShaderSource(shader_id, 1, &file_allocation, &shader_size);
@@ -53,11 +53,26 @@ ComputeShader::ComputeShader(const char* path) {
     else {
         abort();
     }
+    group_size_x = _group_size_x;
+    group_size_y = _group_size_y;
+    group_size_z = _group_size_z;
 }
 
 void ComputeShader::Bind() const
 {
     glUseProgram(program_id);
+}
+
+void ComputeShader::BindAndDispatch(unsigned int dimension_x, unsigned int dimension_y, unsigned int dimension_z) const {
+    Bind();
+    Dispatch(dimension_x, dimension_y, dimension_z);
+}
+
+void ComputeShader::Dispatch(unsigned int dimension_x, unsigned int dimension_y, unsigned int dimension_z) const {
+    int group_count_x = ceilf(dimension_x / (float)group_size_x);
+    int group_count_y = ceilf(dimension_y / (float)group_size_y);
+    int group_count_z = ceilf(dimension_z / (float)group_size_z);
+    glDispatchCompute(group_count_x, group_count_y, group_count_z);
 }
 
 void ComputeShader::CreateUniformBlock(const char* name, size_t byte_size)

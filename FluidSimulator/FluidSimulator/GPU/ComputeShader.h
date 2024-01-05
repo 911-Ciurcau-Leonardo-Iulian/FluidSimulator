@@ -9,9 +9,14 @@ struct UniformBlock {
 
 class ComputeShader {
 public:
-    ComputeShader(const char* path);
+    ComputeShader() = default;
+    ComputeShader(const char* path, unsigned int group_size_x, unsigned int group_size_y, unsigned int group_size_z);
 
     void Bind() const;
+
+    void BindAndDispatch(unsigned int dimension_x, unsigned int dimension_y, unsigned int dimension_z) const;
+
+    void Dispatch(unsigned int dimension_x, unsigned int dimension_y, unsigned int dimension_z) const;
 
     void CreateUniformBlock(const char* name, size_t byte_size);
 
@@ -27,4 +32,7 @@ public:
 private:
     std::vector<UniformBlock> uniform_blocks;
     unsigned int program_id;
+    unsigned int group_size_x;
+    unsigned int group_size_y;
+    unsigned int group_size_z;
 };

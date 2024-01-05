@@ -1,0 +1,139 @@
+#version 430 core
+layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+
+layout(std140, binding = 0) uniform Settings {
+    uint numParticles;
+    float gravity;
+    float deltaTime;
+    float collisionDamping;
+    float smoothingRadius;
+    float targetDensity;
+    float pressureMultiplier;
+    float nearPressureMultiplier;
+    float viscosityStrength;
+    vec2 boundsSize;
+    vec2 interactionInputPoint;
+    float interactionInputStrength;
+    float interactionInputRadius;
+    vec2 obstacleSize;
+    vec2 obstacleCentre;
+};
+
+layout(std430, binding = 0) buffer Positions
+{
+    float x;
+    float y;
+};
+
+layout(std430, binding = 1) buffer Velocities
+{
+    float x;
+    float y;
+};
+
+layout(std430, binding = 2) buffer PredictedPositions
+{
+    float x;
+    float y;
+};
+
+layout(std430, binding = 3) writeonly buffer SpatialOffsets
+{
+    uint value;
+};
+
+layout(std430, binding = 4) writeonly buffer SpatialIndices
+{
+    uint index;
+    uint hash;
+    uint key;
+};
+
+vec2 CalculateExternalForces(vec2 pos, vec2 velocity)
+{
+//	// Gravity
+//	vec2 gravityAccel = vec2(0, gravity);
+//	
+//	// Input interactions modify gravity
+//	if (interactionInputStrength != 0) {
+//		vec2 inputPointOffset = interactionInputPoint - pos;
+//		float sqrDst = dot(inputPointOffset, inputPointOffset);
+//		if (sqrDst < interactionInputRadius * interactionInputRadius)
+//		{
+//			float dst = sqrt(sqrDst);
+//			float edgeT = (dst / interactionInputRadius);
+//			float centreT = 1 - edgeT;
+//			vec2 dirToCentre = inputPointOffset / dst;
+//
+//			float gravityWeight = 1 - (centreT * clamp(interactionInputStrength / 10, 0.0, 1.0));
+//			vec2 accel = gravityAccel * gravityWeight + dirToCentre * centreT * interactionInputStrength;
+//			accel -= velocity * centreT;
+//			return accel;
+//		}
+//	}
+//
+//	return gravityAccel;
+    return vec2(0.0);
+}
+
+const ivec2 offsets2D[9] =
+{
+	ivec2(-1, 1),
+	ivec2(0, 1),
+	ivec2(1, 1),
+	ivec2(-1, 0),
+	ivec2(0, 0),
+	ivec2(1, 0),
+	ivec2(-1, -1),
+	ivec2(0, -1),
+	ivec2(1, -1),
+};
+
+// Constants used for hashing
+const uint hashK1 = 15823;
+const uint hashK2 = 9737333;
+
+// Convert floating point position into an integer cell coordinate
+ivec2 GetCell2D(vec2 position, float radius)
+{
+	return ivec2(floor(position / radius));
+}
+
+// Hash cell coordinate to a single unsigned integer
+uint HashCell2D(ivec2 cell)
+{
+	uvec2 unsigned_cell = uvec2(cell);
+	uint a = unsigned_cell.x * hashK1;
+	uint b = unsigned_cell.y * hashK2;
+	return (a + b);
+}
+
+uint KeyFromHash(uint hash, uint tableSize)
+{
+	return hash % tableSize;
+}
+
+void main()
+{
+    uvec3 id = gl_GlobalInvocationID;
+	if (id.x >= numParticles)
+        return;
+
+	// External forces (gravity and input interaction)
+	Velocities[id.x] += CalculateExternalForces(Positions[id.x], Velocities[id.x]) * deltaTime;
+
+//	// Predict
+//	const float predictionFactor = 1 / 120.0;
+//    const float predictedPosition = Positions[id.x] + Velocities[id.x] * predictionFactor;
+//	PredictedPositions[id.x] = predictedPosition;
+//    return;
+//
+//    // Reset offsets
+//	SpatialOffsets[id.x] = numParticles;
+//	// Update index buffer
+//	uint index = id.x;
+//	uvec2 cell = GetCell2D(predictedPosition, smoothingRadius);
+//	uint hash = HashCell2D(cell);
+//	uint key = KeyFromHash(hash, numParticles);
+//	SpatialIndices[id.x] = uvec3(index, hash, key);
+}

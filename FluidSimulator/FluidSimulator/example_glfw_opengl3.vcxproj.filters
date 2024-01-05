@@ -43,9 +43,6 @@
     <ClCompile Include="physics.cpp">
       <Filter>sources</Filter>
     </ClCompile>
-    <ClCompile Include="Vec2.cpp">
-      <Filter>sources</Filter>
-    </ClCompile>
     <ClCompile Include="GPU\ComputeShader.cpp">
       <Filter>sources</Filter>
     </ClCompile>
@@ -53,6 +50,12 @@
       <Filter>sources</Filter>
     </ClCompile>
     <ClCompile Include="GPU\MathConstants.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\Buffers.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\Simulation.cpp">
       <Filter>sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -84,6 +87,8 @@
     <ClInclude Include="GPU\khrplatform.h" />
     <ClInclude Include="GPU\MathConstants.h" />
     <ClInclude Include="GPU\GeneralSettings.h" />
+    <ClInclude Include="GPU\Buffers.h" />
+    <ClInclude Include="GPU\Simulation.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
@@ -93,5 +98,9 @@
     <None Include="..\..\misc\debuggers\imgui.natstepfilter">
       <Filter>imgui</Filter>
     </None>
+    <None Include="GPU\Shaders\simulation_early.comp" />
+    <None Include="GPU\Shaders\simulation_late.comp" />
+    <None Include="GPU\Shaders\sort.comp" />
+    <None Include="GPU\Shaders\sort_calculate_offsets.comp" />
   </ItemGroup>
 </Project>

@@ -167,13 +167,14 @@
     <ClCompile Include="..\..\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\..\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="fluidSimulatorWindow.cpp" />
+    <ClCompile Include="GPU\Buffers.cpp" />
     <ClCompile Include="GPU\ComputeShader.cpp" />
     <ClCompile Include="GPU\glad.c" />
     <ClCompile Include="GPU\MathConstants.cpp" />
+    <ClCompile Include="GPU\Simulation.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="particle.cpp" />
     <ClCompile Include="physics.cpp" />
-    <ClCompile Include="Vec2.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h" />
@@ -183,11 +184,13 @@
     <ClInclude Include="..\..\backends\imgui_impl_opengl3.h" />
     <ClInclude Include="..\..\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="fluidSimulatorWindow.h" />
+    <ClInclude Include="GPU\Buffers.h" />
     <ClInclude Include="GPU\ComputeShader.h" />
     <ClInclude Include="GPU\GeneralSettings.h" />
     <ClInclude Include="GPU\glad.h" />
     <ClInclude Include="GPU\khrplatform.h" />
     <ClInclude Include="GPU\MathConstants.h" />
+    <ClInclude Include="GPU\Simulation.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="Vec2.h" />
@@ -196,6 +199,10 @@
     <None Include="..\..\misc\debuggers\imgui.natstepfilter" />
     <None Include="..\..\misc\debuggers\imgui.natvis" />
     <None Include="..\README.txt" />
+    <None Include="GPU\Shaders\simulation_early.comp" />
+    <None Include="GPU\Shaders\simulation_late.comp" />
+    <None Include="GPU\Shaders\sort.comp" />
+    <None Include="GPU\Shaders\sort_calculate_offsets.comp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

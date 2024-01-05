@@ -8,6 +8,7 @@
 // - Introduction, links and more at the top of imgui.cpp
 
 #include "fluidSimulatorWindow.h"
+#include "GPU/Simulation.h"
 #include "imgui.h"
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_opengl3.h"
@@ -60,7 +61,7 @@ int main(int, char**)
     // GL 3.0 + GLSL 130
     const char* glsl_version = "#version 130";
     glfwWindowHint(GLFW_CONTEXT_VERSION_MAJOR, 4);
-    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 3);
+    glfwWindowHint(GLFW_CONTEXT_VERSION_MINOR, 4);
     //glfwWindowHint(GLFW_OPENGL_PROFILE, GLFW_OPENGL_CORE_PROFILE);  // 3.2+ only
     //glfwWindowHint(GLFW_OPENGL_FORWARD_COMPAT, GL_TRUE);            // 3.0+ only
 #endif
@@ -72,6 +73,8 @@ int main(int, char**)
     glfwMakeContextCurrent(window);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     glfwSwapInterval(1); // Enable vsync
+
+    Simulation simulation{};
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
