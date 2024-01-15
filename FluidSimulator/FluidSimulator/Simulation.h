@@ -1,10 +1,10 @@
 #pragma once
 #include "Vec2.h"
-#include "GPUSort.h"
 #include "physics.h"
 #include "ParticleSpawner.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+#include <iostream>
 
 struct Simulation
 {
@@ -22,16 +22,12 @@ struct Simulation
 
         auto spawnData = spawner.GetSpawnData();
 
-        physics.numParticles = spawnData.positions.size();;
+        physics.numParticles = spawnData.positions.size();
         // Create buffers
         physics.ResizeBuffers();
 
         // Set buffer data
         SetInitialBufferData(spawnData);
-
-        //gpuSort = new();
-        //gpuSort.SetBuffers(spatialIndices, spatialOffsets);
-
 
         // Init display
         // display.Init(this);
@@ -41,10 +37,10 @@ struct Simulation
     {
         // Run simulation if not in fixed timestep mode
         // (skip running for first few frames as deltaTime can be disproportionaly large)
-        MoveParticles();
+        //MoveParticles();
         // if (frameIndex > 10)
         // {
-        //     RunSimulationFrame(deltaTime);
+             RunSimulationFrame(deltaTime);
         // }
 
         // if (pauseNextFrame)
@@ -73,15 +69,34 @@ struct Simulation
 
     void RunSimulationStep()
     {
+        std::cout << "RUN SIMULATION STEP\n\n";
         //run tasks
-        /*ComputeHelper.Dispatch(compute, numParticles, kernelIndex: externalForcesKernel);
-        ComputeHelper.Dispatch(compute, numParticles, kernelIndex: spatialHashKernel);
-        gpuSort.SortAndCalculateOffsets();
-        ComputeHelper.Dispatch(compute, numParticles, kernelIndex: densityKernel);
-        ComputeHelper.Dispatch(compute, numParticles, kernelIndex: pressureKernel);
-        ComputeHelper.Dispatch(compute, numParticles, kernelIndex: viscosityKernel);
-        ComputeHelper.Dispatch(compute, numParticles, kernelIndex: updatePositionKernel);*/
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.ExternalForces(i);
+        }
 
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.UpdateSpatialHash(i);
+        }
+
+        physics.GpuSortAndCalculateOffsets();
+
+        // for (int i = 0; i < physics.numParticles; i++)
+        // {
+        //     physics.CalculateDensity(i);
+        // }
+
+        // for (int i = 0; i < physics.numParticles; i++)
+        // {
+        //     physics.CalculatePressureForce(i);
+        // }
+
+        // for (int i = 0; i < physics.numParticles; i++)
+        // {
+        //     physics.CalculateViscosity(i);
+        // }
     }
 
     void UpdateSettings(float deltaTime)
@@ -173,7 +188,7 @@ struct Simulation
 
     float timeScale = 1;
     bool fixedTimeStep;
-    int iterationsPerFrame;
+    int iterationsPerFrame = 1;
     float gravity;
     float collisionDamping = 0.95f;
     float smoothingRadius = 2;
@@ -191,7 +206,6 @@ struct Simulation
      //ParticleDisplay2D display; ????
 
     // Buffers
-    GPUSort gpuSort;
 
     // State
     bool isPaused;

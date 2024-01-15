@@ -20,7 +20,7 @@ struct Physics
     //GPUSort
     std::vector<Entry> Entries;
     std::vector<unsigned int> Offsets;
-    unsigned int numEntries;
+    //unsigned int numEntries;
     unsigned int groupWidth;
     unsigned int groupHeight;
     unsigned int stepIndex;
@@ -98,15 +98,62 @@ struct Physics
 
     void HandleCollisions(ImU32 particleIndex);
 
-    void ExternalForces(SpatialEntry id);
+    void ExternalForces(int id);
 
-    void UpdateSpatialHash(SpatialEntry id);
+    void UpdateSpatialHash(int id);
 
-    void CalculateDensities(SpatialEntry id);
+    void CalculateDensities(int id);
 
-    void CalculatePressureForce(SpatialEntry id);
+    void CalculatePressureForce(int id);
 
-    void CalculateViscosity(SpatialEntry id);
+    void CalculateViscosity(int id);
 
-    void UpdatePositions(SpatialEntry id);
+    void UpdatePositions(int id);
+
+
+    int nextPowerOfTwo(unsigned int n)
+    {
+        int power = 1;
+        while (power < n)
+            power <<= 1; 
+        
+        return power;
+    }
+
+    // Sorts given buffer of integer values using bitonic merge sort
+    // Note: buffer size is not restricted to powers of 2 in this implementation
+    void GpuSort()
+    {
+        // Launch each step of the sorting algorithm (once the previous step is complete)
+        // Number of steps = [log2(n) * (log2(n) + 1)] / 2
+        // where n = nearest power of 2 that is greater or equal to the number of inputs
+        int numStages = (int)std::log2(nextPowerOfTwo(numParticles));
+
+        //launch tasks here VVVVVV
+
+        for (int stageIndex = 0; stageIndex < numStages; stageIndex++)
+        {
+           for (stepIndex = 0; stepIndex < stageIndex + 1; stepIndex++)
+           {
+               // Calculate some pattern stuff
+               groupWidth = 1 << (stageIndex - stepIndex);
+               groupHeight = 2 * groupWidth - 1;
+               // Run the sorting step on the GPU
+               int bound = nextPowerOfTwo(numParticles) / 2;
+               for (int i = 0; i < bound; i++) {
+                    Sort(i);
+               }
+           }
+        }
+    }
+
+
+    void GpuSortAndCalculateOffsets()
+    {
+        GpuSort();
+        for (int i = 0; i < numParticles; i++)
+        {
+            CalculateOffsets(i);
+        }
+    }
 };

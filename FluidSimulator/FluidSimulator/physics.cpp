@@ -16,7 +16,7 @@ void Physics::Sort(unsigned int id)
     unsigned int indexRight = indexLeft + rightStepSize;
 
     // Exit if out of bounds (for non-power of 2 input sizes)
-    if (indexRight >= numEntries) return;
+    if (indexRight >= numParticles) return;
 
     unsigned int valueLeft = Entries[indexLeft].key;
     unsigned int valueRight = Entries[indexRight].key;
@@ -56,10 +56,10 @@ void Physics::ResizeBuffers() {
 
 void Physics::CalculateOffsets(unsigned int id)
 {
-    if (id >= numEntries) { return; }
+    if (id >= numParticles) { return; }
 
     unsigned int i = id;
-    unsigned int null = numEntries;
+    unsigned int null = numParticles;
 
     unsigned int key = Entries[i].key;
     unsigned int keyPrev = i == 0 ? null : Entries[i - 1].key;
@@ -302,54 +302,54 @@ void Physics::HandleCollisions(ImU32 particleIndex)
     Velocities[particleIndex] = vel;
 }
 
-void Physics::ExternalForces(SpatialEntry id)
+void Physics::ExternalForces(int id)
 {
-    if (id.index >= numParticles) return;
+    if (id >= numParticles) return;
 
     // External forces Physics::(gravity and input interaction)
-    Velocities[id.index] += ExternalForces(Positions[id.index], Velocities[id.index]) * deltaTime;
+    Velocities[id] += ExternalForces(Positions[id], Velocities[id]) * deltaTime;
 
     // Predict
     const float predictionFactor = 1 / 120.0;
-    PredictedPositions[id.index] = Positions[id.index] + Velocities[id.index] * predictionFactor;
+    PredictedPositions[id] = Positions[id] + Velocities[id] * predictionFactor;
 }
 
 
-void Physics::UpdateSpatialHash(SpatialEntry id)
+void Physics::UpdateSpatialHash(int id)
 {
-	if (id.index >= numParticles) return;
+	if (id >= numParticles) return;
 
 	// Reset offsets
-	SpatialOffsets[id.index] = numParticles;
+	SpatialOffsets[id] = numParticles;
 	// Update index buffer
-	ImU32 index = id.index;
+	ImU32 index = id;
 	Int2 cell = GetCell2D(PredictedPositions[index], smoothingRadius);
 	ImU32 hash = HashCell2D(cell);
 	ImU32 key = KeyFromHash(hash, numParticles);
-    SpatialIndices[id.index] = { index, hash, key };
+    SpatialIndices[id] = { index, hash, key };
 }
 
 
-void Physics::CalculateDensities(SpatialEntry id)
+void Physics::CalculateDensities(int id)
 {
-    if (id.index >= numParticles) return;
+    if (id >= numParticles) return;
 
-    Float2 pos = PredictedPositions[id.index];
-    Densities[id.index] = CalculateDensity(pos);
+    Float2 pos = PredictedPositions[id];
+    Densities[id] = CalculateDensity(pos);
 }
 
 
-void Physics::CalculatePressureForce(SpatialEntry id)
+void Physics::CalculatePressureForce(int id)
 {
-    if (id.index >= numParticles) return;
+    if (id >= numParticles) return;
 
-    float density = Densities[id.index][0];
-    float densityNear = Densities[id.index][1];
+    float density = Densities[id][0];
+    float densityNear = Densities[id][1];
     float pressure = PressureFromDensity(density);
     float nearPressure = NearPressureFromDensity(densityNear);
     Float2 pressureForce = 0;
 
-    Float2 pos = PredictedPositions[id.index];
+    Float2 pos = PredictedPositions[id];
     Int2 originCell = GetCell2D(pos, smoothingRadius);
     float sqrRadius = smoothingRadius * smoothingRadius;
 
@@ -371,7 +371,7 @@ void Physics::CalculatePressureForce(SpatialEntry id)
 
             ImU32 neighbourIndex = indexData.index;
             // Skip if looking at self
-            if (neighbourIndex == id.index) continue;
+            if (neighbourIndex == id) continue;
 
             Float2 neighbourPos = PredictedPositions[neighbourIndex];
             Float2 offsetToNeighbour = neighbourPos - pos;
@@ -398,20 +398,20 @@ void Physics::CalculatePressureForce(SpatialEntry id)
     }
 
     Float2 acceleration = pressureForce / density;
-    Velocities[id.index] += acceleration * deltaTime;
+    Velocities[id] += acceleration * deltaTime;
 }
 
-void Physics::CalculateViscosity(SpatialEntry id)
+void Physics::CalculateViscosity(int id)
 {
-    if (id.index >= numParticles) return;
+    if (id >= numParticles) return;
 
 
-    Float2 pos = PredictedPositions[id.index];
+    Float2 pos = PredictedPositions[id];
     Int2 originCell = GetCell2D(pos, smoothingRadius);
     float sqrRadius = smoothingRadius * smoothingRadius;
 
     Float2 viscosityForce = 0;
-    Float2 velocity = Velocities[id.index];
+    Float2 velocity = Velocities[id];
 
     for (int i = 0; i < 9; i++)
     {
@@ -430,7 +430,7 @@ void Physics::CalculateViscosity(SpatialEntry id)
 
             ImU32 neighbourIndex = indexData.index;
             // Skip if looking at self
-            if (neighbourIndex == id.index) continue;
+            if (neighbourIndex == id) continue;
 
             Float2 neighbourPos = PredictedPositions[neighbourIndex];
             Float2 offsetToNeighbour = neighbourPos - pos;
@@ -445,14 +445,14 @@ void Physics::CalculateViscosity(SpatialEntry id)
         }
 
     }
-    Velocities[id.index] += viscosityForce * viscosityStrength * deltaTime;
+    Velocities[id] += viscosityForce * viscosityStrength * deltaTime;
 }
 
 
-void Physics::UpdatePositions(SpatialEntry id)
+void Physics::UpdatePositions(int id)
 {
-    if (id.index >= numParticles) return;
+    if (id >= numParticles) return;
 
-    Positions[id.index] += Velocities[id.index] * deltaTime;
-    HandleCollisions(id.index);
+    Positions[id] += Velocities[id] * deltaTime;
+    HandleCollisions(id);
 }
