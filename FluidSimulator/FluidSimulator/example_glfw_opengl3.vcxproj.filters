@@ -46,10 +46,10 @@
     <ClCompile Include="Vec2.cpp">
       <Filter>sources</Filter>
     </ClCompile>
-    <ClCompile Include="GPUSort.h">
+    <ClCompile Include="Simulation.cpp">
       <Filter>sources</Filter>
     </ClCompile>
-    <ClCompile Include="Simulation.cpp">
+    <ClCompile Include="ParticleSpawner.cpp">
       <Filter>sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -77,6 +77,7 @@
     <ClInclude Include="physics.h" />
     <ClInclude Include="Vec2.h" />
     <ClInclude Include="Simulation.h" />
+    <ClInclude Include="ParticleSpawner.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />

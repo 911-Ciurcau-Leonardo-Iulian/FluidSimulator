@@ -46,6 +46,8 @@ void Physics::Sort(unsigned int id)
 
 
 void Physics::ResizeBuffers() {
+    Entries.resize(numParticles);
+    Offsets.resize(numParticles);
     Positions.resize(numParticles);
     PredictedPositions.resize(numParticles);
     Velocities.resize(numParticles);

@@ -19,6 +19,8 @@ struct Simulation
         float deltaTime = 1 / 60.f;
 
         frameIndex = 0;
+        isPaused = false;
+        pauseNextFrame = false;
 
         auto spawnData = spawner.GetSpawnData();
 
@@ -83,20 +85,20 @@ struct Simulation
 
         physics.GpuSortAndCalculateOffsets();
 
-        // for (int i = 0; i < physics.numParticles; i++)
-        // {
-        //     physics.CalculateDensity(i);
-        // }
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.CalculateDensity(i);
+        }
 
-        // for (int i = 0; i < physics.numParticles; i++)
-        // {
-        //     physics.CalculatePressureForce(i);
-        // }
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.CalculatePressureForce(i);
+        }
 
-        // for (int i = 0; i < physics.numParticles; i++)
-        // {
-        //     physics.CalculateViscosity(i);
-        // }
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.CalculateViscosity(i);
+        }
     }
 
     void UpdateSettings(float deltaTime)

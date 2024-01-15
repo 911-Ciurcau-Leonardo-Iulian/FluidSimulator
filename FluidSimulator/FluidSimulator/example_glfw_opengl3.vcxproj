@@ -171,9 +171,9 @@
     <ClCompile Include="..\..\backends\imgui_impl_glfw.cpp" />
     <ClCompile Include="..\..\backends\imgui_impl_opengl3.cpp" />
     <ClCompile Include="fluidSimulatorWindow.cpp" />
-    <ClCompile Include="GPUSort.h" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="particle.cpp" />
+    <ClCompile Include="ParticleSpawner.cpp" />
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="Simulation.cpp" />
     <ClCompile Include="Vec2.cpp" />
@@ -187,6 +187,7 @@
     <ClInclude Include="..\..\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="fluidSimulatorWindow.h" />
     <ClInclude Include="particle.h" />
+    <ClInclude Include="ParticleSpawner.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="Simulation.h" />
     <ClInclude Include="Vec2.h" />

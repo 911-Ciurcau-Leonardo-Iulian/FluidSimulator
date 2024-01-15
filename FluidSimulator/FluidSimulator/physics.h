@@ -1,6 +1,7 @@
 #include "Vec2.h"
 #include <imgui.h>
 #include <vector>
+#include <cmath>
 
 struct SpatialEntry {
     unsigned int index;
