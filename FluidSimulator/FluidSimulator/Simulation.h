@@ -2,10 +2,16 @@
 #include "Vec2.h"
 #include "GPUSort.h"
 #include "physics.h"
+#include "ParticleSpawner.h"
 #define _USE_MATH_DEFINES
 #include <math.h>
+
 struct Simulation
 {
+    Simulation()
+    {
+    }
+
     void Start()
     {
         //Debug.Log("Controls: Space = Play/Pause, R = Reset, LMB = Attract, RMB = Repel");
@@ -14,14 +20,14 @@ struct Simulation
 
         frameIndex = 0;
 
-        //spawnData = spawner.GetSpawnData(); ???
-        //numParticles = spawnData.positions.Length;
+        auto spawnData = spawner.GetSpawnData();
 
+        physics.numParticles = spawnData.positions.size();;
         // Create buffers
         physics.ResizeBuffers();
 
         // Set buffer data
-        //SetInitialBufferData(spawnData);
+        SetInitialBufferData(spawnData);
 
         //gpuSort = new();
         //gpuSort.SetBuffers(spatialIndices, spatialOffsets);
@@ -35,18 +41,19 @@ struct Simulation
     {
         // Run simulation if not in fixed timestep mode
         // (skip running for first few frames as deltaTime can be disproportionaly large)
-        if (frameIndex > 10)
-        {
-            RunSimulationFrame(deltaTime);
-        }
+        MoveParticles();
+        // if (frameIndex > 10)
+        // {
+        //     RunSimulationFrame(deltaTime);
+        // }
 
-        if (pauseNextFrame)
-        {
-            isPaused = true;
-            pauseNextFrame = false;
-        }
+        // if (pauseNextFrame)
+        // {
+        //     isPaused = true;
+        //     pauseNextFrame = false;
+        // }
 
-        HandleInput();
+        // HandleInput();
     }
 
     void RunSimulationFrame(float frameTime)
@@ -101,15 +108,11 @@ struct Simulation
         physics.interactionInputRadius = interactionRadius;*/
     }
 
-    void SetInitialBufferData()
+    void SetInitialBufferData(ParticleSpawnData spawnData)
     {
-        //!!!
-        /*float2[] allPoints = new float2[spawnData.positions.Length];
-        System.Array.Copy(spawnData.positions, allPoints, spawnData.positions.Length);
-
-        positionBuffer.SetData(allPoints);
-        predictedPositionBuffer.SetData(allPoints);
-        velocityBuffer.SetData(spawnData.velocities);*/
+        physics.Positions = spawnData.positions;
+        physics.PredictedPositions = spawnData.positions;
+        physics.Velocities = spawnData.velocities;
     }
 
     void HandleInput()
@@ -131,7 +134,8 @@ struct Simulation
         //    // Reset positions, the run single frame to get density etc (for debug purposes) and then reset positions again
         //    SetInitialBufferData(spawnData);
         //    RunSimulationStep();
-        //    SetInitialBufferData(spawnData);
+        //    SetInitialBuffer        System.Array.Copy(spawnData.positions, allPoints, spawnData.positions.Length);
+//Data(spawnData);
         //}
     }
 
@@ -156,7 +160,16 @@ struct Simulation
 
     }
 
+    void MoveParticles() 
+    {
+        for (auto& particle : physics.Positions)
+        {
+            particle.x += 1;
+        }
+    }
+
     Physics physics;
+    ParticleSpawner spawner;
 
     float timeScale = 1;
     bool fixedTimeStep;
@@ -183,8 +196,6 @@ struct Simulation
     // State
     bool isPaused;
     bool pauseNextFrame;
-
-    int numParticles;
 
     int frameIndex;
     float deltaTime;

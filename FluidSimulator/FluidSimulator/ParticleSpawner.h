@@ -7,10 +7,8 @@ struct ParticleSpawnData
     std::vector<Float2> positions;
     std::vector<Float2> velocities;
 
-    ParticleSpawnData(int num)
+    ParticleSpawnData(int num) : positions((num)), velocities((num))
     {
-        positions = new Float2[num];
-        velocities = new Float2[num];
     }
 };
 
@@ -19,21 +17,29 @@ class ParticleSpawner
 public:
     int particleCount;
 
-    Vector2 initialVelocity;
-    Vector2 spawnCentre;
-    Vector2 spawnSize;
-    float jitterStr;
+    Float2 initialVelocity;
+    Float2 spawnCentre;
+    Float2 spawnSize;
     bool showSpawnBoundsGizmos;
 
     ParticleSpawnData GetSpawnData();
 
+    ParticleSpawner() 
+    {
+        particleCount = 20;
+        initialVelocity = 0;
+        spawnCentre = Float2(600, 100);
+        spawnSize = 100;
+        showSpawnBoundsGizmos = false;
+    }
+
     void OnDrawGizmos()
     {
-        if (showSpawnBoundsGizmos && !Application.isPlaying)
-        {
-            Gizmos.color = new Color(1, 1, 0, 0.5f);
-            Gizmos.DrawWireCube(spawnCentre, Vector2.one * spawnSize);
-        }
+        // if (showSpawnBoundsGizmos && !Application.isPlaying)
+        // {
+        //     Gizmos.color = new Color(1, 1, 0, 0.5f);
+        //     Gizmos.DrawWireCube(spawnCentre, Vector2.one * spawnSize);
+        // }
     }
 };
 

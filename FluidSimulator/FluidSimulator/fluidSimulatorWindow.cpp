@@ -1,18 +1,17 @@
 #include "fluidSimulatorWindow.h"
 #include <time.h>
+#include <iostream>
 
 FluidSimulatorWindow::FluidSimulatorWindow()
 {
     srand(time(NULL));
-
-    for (auto& particle : FluidSimulatorWindow::particles) 
-    {
-        particle = Particle({(float) (rand() % 400 + 400), (float) (rand() % 300)});
-    }
+    simulation.Start();
 }
 
 void FluidSimulatorWindow::draw(ImGuiIO& io)
 {
+    simulation.Update();
+
     ImGui::Begin("Fluid Simulator Main Window", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar); 
 
     ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
@@ -27,10 +26,21 @@ void FluidSimulatorWindow::draw(ImGuiIO& io)
     ImU32 bgColor = ImGui::GetColorU32(style.Colors[ImGuiCol_WindowBg]);
     ImGui::GetWindowDrawList()->AddLine(rectPos, {rectPos.x + rectSize.x, rectPos.y}, bgColor);
 
-    for (auto& particle : FluidSimulatorWindow::particles) 
+    for (auto& particle : simulation.physics.Positions) 
     {
-        particle.draw();
+        drawParticle(particle);
+        //std::cout << '(' << particle.x << ',' << particle.y << ")\n";
     }
+    //std::cout << "\n\n";
 
     ImGui::End();
+}
+
+void FluidSimulatorWindow::drawParticle(Float2 position) 
+{
+    auto radius = 10;
+    auto color = IM_COL32(155, 155, 0, 255);
+    ImU32 strokeColor = IM_COL32(255, 255, 255, 255);
+    ImGui::GetWindowDrawList()->AddCircleFilled(position, radius, color);
+    ImGui::GetWindowDrawList()->AddCircle(position, radius, strokeColor);
 }

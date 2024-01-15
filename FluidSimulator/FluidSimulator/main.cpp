@@ -140,10 +140,13 @@ int main(int, char**)
 
             int width, height;
             glfwGetWindowSize(window, &width, &height);
-            ImGui::SetNextWindowSizeConstraints(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImVec2(static_cast<float>(width), static_cast<float>(height)));
+            ImGui::SetNextWindowSizeConstraints(ImVec2(static_cast<float>(width), 
+                static_cast<float>(height)), ImVec2(static_cast<float>(width), static_cast<float>(height)));
             ImGui::SetNextWindowPos(ImVec2(0, 0));
 
             fluidSimulatorWindow.draw(io);
+
+            // physics should go here
         }
 
         // Rendering
