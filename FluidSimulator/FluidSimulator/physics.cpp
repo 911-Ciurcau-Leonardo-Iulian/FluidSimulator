@@ -4,38 +4,71 @@
 
 static const int NumThreads = 64;
 
+// Sort the given entries by their keys (smallest to largest)
+// This is done using bitonic merge sort, and takes multiple iterations
+void Physics::Sort(unsigned int id)
+{
+    unsigned int i = id;
 
-// Buffers
-std::vector<Float2> Positions;
-std::vector<Float2> PredictedPositions;
-std::vector<Float2> Velocities;
-std::vector<Float2> Densities; // Density, Near Density
-std::vector<SpatialEntry> SpatialIndices; // used for spatial hashing
-std::vector<ImU32> SpatialOffsets; // used for spatial hashing
+    unsigned int hIndex = i & (groupWidth - 1);
+    unsigned int indexLeft = hIndex + (groupHeight + 1) * (i / groupWidth);
+    unsigned int rightStepSize = stepIndex == 0 ? groupHeight - 2 * hIndex : (groupHeight + 1) / 2;
+    unsigned int indexRight = indexLeft + rightStepSize;
 
-// Settings
-ImU32 numParticles;
-float gravity;
-float deltaTime;
-float collisionDamping;
-float smoothingRadius;
-float targetDensity;
-float pressureMultiplier;
-float nearPressureMultiplier;
-float viscosityStrength;
-Float2 boundsSize;
-Float2 interactionInputPoint;
-float interactionInputStrength;
-float interactionInputRadius;
+    // Exit if out of bounds (for non-power of 2 input sizes)
+    if (indexRight >= numEntries) return;
 
-Float2 obstacleSize;
-Float2 obstacleCentre;
+    unsigned int valueLeft = Entries[indexLeft].key;
+    unsigned int valueRight = Entries[indexRight].key;
 
-float Poly6ScalingFactor;
-float SpikyPow3ScalingFactor;
-float SpikyPow2ScalingFactor;
-float SpikyPow3DerivativeScalingFactor;
-float SpikyPow2DerivativeScalingFactor;
+    // Swap entries if value is descending
+    if (valueLeft > valueRight)
+    {
+        Entry temp = Entries[indexLeft];
+        Entries[indexLeft] = Entries[indexRight];
+        Entries[indexRight] = temp;
+    }
+}
+
+// Calculate offsets into the sorted Entries buffer (used for spatial hashing).
+// For example, given an Entries buffer sorted by key like so: {2, 2, 2, 3, 6, 6, 9, 9, 9, 9}
+// The resulting Offsets calculated here should be:            {-, -, 0, 3, -, -, 4, -, -, 6}
+// (where '-' represents elements that won't be read/written)
+// 
+// Usage example:
+// Say we have a particular particle P, and we want to know which particles are in the same grid cell as it.
+// First we would calculate the Key of P based on its position. Let's say in this example that Key = 9.
+// Next we can look up Offsets[Key] to get: Offsets[9] = 6
+// This tells us that SortedEntries[6] is the first particle that's in the same cell as P.
+// We can then loop until we reach a particle with a different cell key in order to iterate over all the particles in the cell.
+// 
+// NOTE: offsets buffer must filled with values equal to (or greater than) its length to ensure that this works correctly
+
+
+void Physics::ResizeBuffers() {
+    Positions.resize(numParticles);
+    PredictedPositions.resize(numParticles);
+    Velocities.resize(numParticles);
+    Densities.resize(numParticles);
+    SpatialIndices.resize(numParticles);
+    SpatialOffsets.resize(numParticles);
+}
+
+void Physics::CalculateOffsets(unsigned int id)
+{
+    if (id >= numEntries) { return; }
+
+    unsigned int i = id;
+    unsigned int null = numEntries;
+
+    unsigned int key = Entries[i].key;
+    unsigned int keyPrev = i == 0 ? null : Entries[i - 1].key;
+
+    if (key != keyPrev)
+    {
+        Offsets[key] = i;
+    }
+}
 
 static const Int2 offsets2D[9] =
 {
