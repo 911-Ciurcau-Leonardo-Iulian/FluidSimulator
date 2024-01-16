@@ -38,6 +38,19 @@ static void glfw_error_callback(int error, const char* description)
 // Main code
 int main(int, char**)
 {
+#if RUN_MPI
+    MPI_Init(0, 0);
+    int me;
+    int nrProcs;
+    MPI_Comm_size(MPI_COMM_WORLD, &nrProcs);
+    MPI_Comm_rank(MPI_COMM_WORLD, &me);
+
+    if (me > 0)
+    {
+
+    }
+#endif
+
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit())
         return 1;
@@ -190,6 +203,10 @@ int main(int, char**)
 
     glfwDestroyWindow(window);
     glfwTerminate();
+
+#if RUN_MPI
+    MPI_Finalize();
+#endif
 
     return 0;
 }

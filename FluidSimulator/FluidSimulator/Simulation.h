@@ -8,12 +8,17 @@
 #include <GLFW\glfw3.h>
 #include <imgui_impl_glfw.h>
 #include <thread>
-#include "ThreadPool.h"
 
 #define SIMULATION_PARAM_FACTOR 4.0f
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 920
 #define RUN_MPI 0
+
+#if RUN_MPI
+#include <mpi.h>
+#else
+#include "ThreadPool.h"
+#endif
 
 struct Simulation
 {
