@@ -9,7 +9,9 @@
 #include <imgui_impl_glfw.h>
 
 
-#define SIMULATION_PARAM_FACTOR 5.0f
+#define SIMULATION_PARAM_FACTOR 4.0f
+#define SCREEN_WIDTH 1920
+#define SCREEN_HEIGHT 920
 
 struct Simulation
 {
@@ -58,7 +60,7 @@ struct Simulation
         physics.pressureMultiplier = physicsParameters.pressureMultiplier;
         physics.nearPressureMultiplier = physicsParameters.nearPressureMultiplier;
         physics.viscosityStrength = physicsParameters.viscosityStrength;*/
-        physics.boundsSize = { 2500, 1150 };
+        physics.boundsSize = { SCREEN_WIDTH, SCREEN_HEIGHT };
 
         // Init display
         // display.Init(this);
