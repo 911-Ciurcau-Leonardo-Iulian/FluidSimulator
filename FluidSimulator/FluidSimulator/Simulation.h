@@ -12,7 +12,7 @@
 #define SIMULATION_PARAM_FACTOR 4.0f
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 920
-#define RUN_MPI 0
+#define RUN_MPI 1
 
 #if RUN_MPI
 #include <mpi.h>
@@ -297,6 +297,8 @@ struct Simulation
     ParticleSpawner spawner;
 #if !RUN_MPI
     ThreadPool pool;
+#else
+    int mpiWorkersCount = 0;
 #endif
 
     float timeScale = 1;

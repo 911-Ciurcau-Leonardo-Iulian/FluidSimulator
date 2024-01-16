@@ -42,7 +42,11 @@ static std::vector<ImVec4> constructHeatmap(size_t numberOfEntries, const std::v
     return heatmap;
 }
 
-FluidSimulatorWindow::FluidSimulatorWindow()
+FluidSimulatorWindow::FluidSimulatorWindow(
+#if RUN_MPI
+    int mpiWorkersCount
+#endif
+)
 {
     /*std::vector<HeatmapEntry> entries = {
         {ImColor(28, 70, 158), 0.15f},
@@ -64,6 +68,9 @@ FluidSimulatorWindow::FluidSimulatorWindow()
 
     heatmap = constructHeatmap(1024, entries);
     srand(time(NULL));
+#if RUN_MPI
+    simulation.mpiWorkersCount = mpiWorkersCount;
+#endif
     simulation.Start();
 }
 

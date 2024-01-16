@@ -30,6 +30,11 @@
 #include "../libs/emscripten/emscripten_mainloop_stub.h"
 #endif
 
+#if RUN_MPI
+#include <mpi.h>
+#include "MpiWorker.h"
+#endif
+
 static void glfw_error_callback(int error, const char* description)
 {
     fprintf(stderr, "GLFW Error %d: %s\n", error, description);
@@ -47,7 +52,10 @@ int main(int, char**)
 
     if (me > 0)
     {
-
+        MpiWorker worker(me);
+        std::cout << "worker" << " " << me << " started\n";
+        worker.run();
+        return 0;
     }
 #endif
 
@@ -123,7 +131,11 @@ int main(int, char**)
     bool show_demo_window = true;
     bool show_another_window = false;
     ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
-    FluidSimulatorWindow fluidSimulatorWindow;
+    FluidSimulatorWindow fluidSimulatorWindow
+#if RUN_MPI
+        (nrProcs - 1)
+#endif
+        ;
 
     // Main loop
 #ifdef __EMSCRIPTEN__
