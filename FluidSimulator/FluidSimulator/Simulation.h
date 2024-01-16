@@ -12,6 +12,7 @@
 #define SIMULATION_PARAM_FACTOR 4.0f
 #define SCREEN_WIDTH 1920
 #define SCREEN_HEIGHT 920
+#define RUN_MPI 0
 
 struct Simulation
 {
@@ -120,6 +121,15 @@ struct Simulation
     void RunSimulationStep()
     {
         //run tasks
+#if RUN_MPI
+        RunSimulationStepMPI();
+#else
+        RunSimulationStepMultithreaded();
+#endif
+    }
+
+    void RunSimulationStepMultithreaded()
+    {
         for (int i = 0; i < physics.numParticles; i++)
         {
             physics.ExternalForces(i);
@@ -147,9 +157,15 @@ struct Simulation
             physics.CalculateViscosity(i);
         }
 
-        for (int i = 0; i < physics.numParticles; i++) {
+        for (int i = 0; i < physics.numParticles; i++)
+        {
             physics.UpdatePositions(i);
         }
+    }
+
+    void RunSimulationStepMPI()
+    {
+
     }
 
     void UpdateSettings(GLFWwindow* window, float deltaTime)

@@ -12,7 +12,6 @@ ParticleSpawnData ParticleSpawner::GetSpawnData()
     int numX = std::ceil(std::sqrt(s.x / s.y * particleCount + (s.x - s.y) * (s.x - s.y) / (4 * s.y * s.y)) - (s.x - s.y) / (2 * s.y));
     int numY = std::ceil(particleCount / (float)numX);
     int i = 0;
-    std::cout << "numX " << numX << "numY " << numY << "\n\n";
 
     for (int y = 0; y < numY; y++)
     {
