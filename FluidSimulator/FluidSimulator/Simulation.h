@@ -18,8 +18,8 @@ struct Simulation
 
     void SetDefaultParams() {
         physics.interactionInputPoint = 0.0f;
-        physics.interactionInputRadius = 0.0f;
-        physics.interactionInputStrength = 0.0f;
+        physics.interactionInputRadius = 10.0f;
+        physics.interactionInputStrength = 10.0f;
         physics.gravity = 15.0f * SIMULATION_PARAM_FACTOR;
         physics.collisionDamping = 0.85f;
         physics.smoothingRadius = 5.5f * SIMULATION_PARAM_FACTOR;
@@ -115,6 +115,10 @@ struct Simulation
     void RunSimulationStep()
     {
         //run tasks
+        for (int i = 0; i < physics.numParticles; i++) {
+            physics.ExternalForces(physics.Positions[i], physics.Velocities[i]);
+        }
+
         for (int i = 0; i < physics.numParticles; i++)
         {
             physics.ExternalForces(i);
@@ -157,18 +161,17 @@ struct Simulation
         physics.SpikyPow2DerivativeScalingFactor = 12 / (pow(physics.smoothingRadius, 4) * M_PI);
 
         // Mouse interaction settings:
-        /*Float2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
-        bool isPullInteraction = Input.GetMouseButton(0);
-        bool isPushInteraction = Input.GetMouseButton(1);
+        Float2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
+        bool isPullInteraction = ImGui::GetIO().MouseClicked[0];
+        bool isPushInteraction = ImGui::GetIO().MouseClicked[1];
         float currInteractStrength = 0;
         if (isPushInteraction || isPullInteraction)
         {
-            currInteractStrength = isPushInteraction ? -interactionStrength : interactionStrength;
-        }*/
+            currInteractStrength = isPushInteraction ? -physics.interactionInputStrength : physics.interactionInputStrength;
+        }
 
-        /*physics.interactionInputPoint = mousePos;
-        physics.interactionInputStrength = currInteractStrength;
-        physics.interactionInputRadius = interactionRadius;*/
+        physics.interactionInputPoint = mousePos;
+        physics.currentInteractionInputStrength = currInteractStrength;
     }
 
     void SetInitialBufferData(ParticleSpawnData spawnData)

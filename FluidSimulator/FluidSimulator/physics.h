@@ -36,8 +36,9 @@ struct Physics
     float viscosityStrength;
     Float2 boundsSize;
     Float2 interactionInputPoint;
-    float interactionInputStrength;
+    float currentInteractionInputStrength;
     float interactionInputRadius;
+    float interactionInputStrength;
 
     Float2 obstacleSize;
     Float2 obstacleCentre;

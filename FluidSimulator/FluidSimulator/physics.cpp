@@ -238,7 +238,7 @@ Float2 Physics::ExternalForces(Float2 pos, Float2 velocity)
     Float2 gravityAccel = Float2(0, gravity);
 
     // Input interactions modify gravity
-    if (interactionInputStrength != 0) {
+    if (currentInteractionInputStrength != 0) {
         Float2 inputPointOffset = interactionInputPoint - pos;
         float sqrDst = Dot(inputPointOffset, inputPointOffset);
         if (sqrDst < interactionInputRadius * interactionInputRadius)
@@ -248,8 +248,8 @@ Float2 Physics::ExternalForces(Float2 pos, Float2 velocity)
             float centreT = 1 - edgeT;
             Float2 dirToCentre = inputPointOffset / dst;
 
-            float gravityWeight = 1 - (centreT * saturate(interactionInputStrength / 10));
-            Float2 accel = gravityAccel * gravityWeight + dirToCentre * centreT * interactionInputStrength;
+            float gravityWeight = 1 - (centreT * saturate(currentInteractionInputStrength / 10));
+            Float2 accel = gravityAccel * gravityWeight + dirToCentre * centreT * currentInteractionInputStrength;
             accel -= velocity * centreT;
             return accel;
         }

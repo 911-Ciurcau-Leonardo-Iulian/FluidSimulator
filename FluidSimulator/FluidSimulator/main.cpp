@@ -149,12 +149,11 @@ int main(int, char**)
             fluidSimulatorWindow.draw(window, io);
             //glfwMakeContextCurrent(settingsWindow);
             ImGui::Begin("Settings Window", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
-            ImGui::SliderFloat2("Interaction Input Point", (float*)&fluidSimulatorWindow.simulation.physics.interactionInputPoint, 0.0f, 1.0f);
-            ImGui::SliderFloat("Interaction Input Radius", &fluidSimulatorWindow.simulation.physics.interactionInputRadius, 0.0f, 1.0f);
-            ImGui::SliderFloat("Interaction Input Strength", &fluidSimulatorWindow.simulation.physics.interactionInputStrength, 0.0f, 1.0f);
+            ImGui::SliderFloat("Interaction Input Radius", &fluidSimulatorWindow.simulation.physics.interactionInputRadius, 0.0f, 1000.0f);
+            ImGui::SliderFloat("Interaction Input Strength", &fluidSimulatorWindow.simulation.physics.interactionInputStrength, 0.0f, 100.0f);
             ImGui::SliderFloat("Gravity", &fluidSimulatorWindow.simulation.physics.gravity, -100.0f * SIMULATION_PARAM_FACTOR, 100.0f * SIMULATION_PARAM_FACTOR);
             ImGui::SliderFloat("Collision Damping", &fluidSimulatorWindow.simulation.physics.collisionDamping, 0.0f, 1.0f);
-            ImGui::SliderFloat("Smoothing Radius", &fluidSimulatorWindow.simulation.physics.smoothingRadius, 0.0f, 10.0f * SIMULATION_PARAM_FACTOR);
+            ImGui::SliderFloat("Smoothing Radius", &fluidSimulatorWindow.simulation.physics.smoothingRadius, 0.5f, 10.0f * SIMULATION_PARAM_FACTOR);
             ImGui::SliderFloat("Target Density", &fluidSimulatorWindow.simulation.physics.targetDensity, 0.0f, 10.0f * SIMULATION_PARAM_FACTOR);
             ImGui::SliderFloat("Pressure Multiplier", &fluidSimulatorWindow.simulation.physics.pressureMultiplier, 0.0f, 100.0f * SIMULATION_PARAM_FACTOR);
             ImGui::SliderFloat("Near Pressure Multiplier", &fluidSimulatorWindow.simulation.physics.nearPressureMultiplier, 0.0f, 10.0f * SIMULATION_PARAM_FACTOR);
