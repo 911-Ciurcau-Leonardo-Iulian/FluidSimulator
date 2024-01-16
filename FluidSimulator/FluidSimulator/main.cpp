@@ -74,8 +74,6 @@ int main(int, char**)
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
     glfwSwapInterval(1); // Enable vsync
 
-    Simulation simulation{};
-
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
     ImGui::CreateContext();

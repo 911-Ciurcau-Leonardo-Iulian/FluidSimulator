@@ -5,27 +5,27 @@
 
 #define MAX_SHADER_SIZE 1024 * 1024
 
-static void CheckCompileErrors(unsigned int shader, bool program_type)
+static void CheckCompileErrors(unsigned int id, bool is_program_type)
 {
     int success;
-    char infoLog[1024];
-    if (!program_type)
+    char info_log[1024];
+    if (!is_program_type)
     {
-        glGetShaderiv(shader, GL_COMPILE_STATUS, &success);
+        glGetShaderiv(id, GL_COMPILE_STATUS, &success);
         if (!success)
         {
-            glGetShaderInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "ERROR::SHADER_COMPILATION_ERROR\n" << infoLog << "\n-------------------------------------------------------\n";
+            glGetShaderInfoLog(id, sizeof(info_log), NULL, info_log);
+            std::cout << "Shader compilation error\n" << info_log << "\n-------------------------------------------------------\n";
             abort();
         }
     }
     else
     {
-        glGetProgramiv(shader, GL_LINK_STATUS, &success);
+        glGetProgramiv(id, GL_LINK_STATUS, &success);
         if (!success)
         {
-            glGetProgramInfoLog(shader, 1024, NULL, infoLog);
-            std::cout << "ERROR::PROGRAM_LINKING_ERROR of type:\n" << infoLog << "\n ------------------------------------------------------- ";
+            glGetProgramInfoLog(id, sizeof(info_log), NULL, info_log);
+            std::cout << "Program link error\n" << info_log << "\n -------------------------------------------------------\n";
             abort();
         }
     }

@@ -1,11 +1,14 @@
 #pragma once
 #include "imgui.h"
 #include "particle.h"
+#include "GPU/Simulation.h"
 
 class FluidSimulatorWindow {
-private:
-    Particle particles[100];
 public:
     FluidSimulatorWindow();
+
     void draw(ImGuiIO& io);
+
+private:
+    Simulation simulation{ 10 };
 };

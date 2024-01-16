@@ -15,7 +15,19 @@ StructuredBuffer::StructuredBuffer(size_t element_byte_size, size_t element_coun
     glBufferData(GL_SHADER_STORAGE_BUFFER, element_byte_size * element_count, data, GL_DYNAMIC_DRAW);
 }
 
-void StructuredBuffer::Bind(unsigned int index)
+void StructuredBuffer::Bind(unsigned int index) const
 {
     glBindBufferBase(GL_SHADER_STORAGE_BUFFER, index, id);
+}
+
+void StructuredBuffer::SetNewDataSize(size_t element_byte_size, size_t element_count) const
+{
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, element_byte_size * element_count, nullptr, GL_DYNAMIC_DRAW);
+}
+
+void StructuredBuffer::SetNewData(size_t element_byte_size, size_t element_count, const void* data) const
+{
+    glBindBuffer(GL_SHADER_STORAGE_BUFFER, id);
+    glBufferData(GL_SHADER_STORAGE_BUFFER, element_byte_size * element_count, data, GL_DYNAMIC_DRAW);
 }

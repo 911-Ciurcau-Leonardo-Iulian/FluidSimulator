@@ -5,10 +5,7 @@ FluidSimulatorWindow::FluidSimulatorWindow()
 {
     srand(time(NULL));
 
-    for (auto& particle : FluidSimulatorWindow::particles) 
-    {
-        particle = Particle({(float) (rand() % 400 + 400), (float) (rand() % 300)});
-    }
+    
 }
 
 void FluidSimulatorWindow::draw(ImGuiIO& io)
