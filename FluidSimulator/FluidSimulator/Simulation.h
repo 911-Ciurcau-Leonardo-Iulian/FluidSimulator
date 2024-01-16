@@ -30,15 +30,15 @@ struct Simulation
         // Set buffer data
         SetInitialBufferData(spawnData);
 
-        const float FACTOR = 2.0f;
+        const float FACTOR = 5.0f;
 
         physics.interactionInputPoint = 0.0f;
         physics.interactionInputRadius = 0.0f;
         physics.interactionInputStrength  = 0.0f;
-        physics.gravity = 50.0f * FACTOR;
-        physics.collisionDamping = 0.95f;
-        physics.smoothingRadius = 15.f * FACTOR;
-        physics.targetDensity = 6.0f * FACTOR;
+        physics.gravity = 15.0f * FACTOR;
+        physics.collisionDamping = 0.85f;
+        physics.smoothingRadius = 5.5f * FACTOR;
+        physics.targetDensity = 6.f * FACTOR;
         physics.pressureMultiplier = 30.0f * FACTOR;
         physics.nearPressureMultiplier = 1.75f * FACTOR;
         physics.viscosityStrength = 0.075f * FACTOR;

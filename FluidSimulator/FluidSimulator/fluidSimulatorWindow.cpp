@@ -38,7 +38,7 @@ void FluidSimulatorWindow::draw(GLFWwindow* window, ImGuiIO& io)
 
 void FluidSimulatorWindow::drawParticle(Float2 position) 
 {
-    auto radius = 10;
+    auto radius = 8;
     auto color = IM_COL32(155, 155, 0, 255);
     ImU32 strokeColor = IM_COL32(255, 255, 255, 255);
     ImGui::GetWindowDrawList()->AddCircleFilled(position, radius, color);

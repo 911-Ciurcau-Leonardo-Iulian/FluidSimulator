@@ -30,6 +30,16 @@ void Physics::Sort(unsigned int id)
     }
 }
 
+
+void Physics::ResizeBuffers() {
+    Positions.resize(numParticles);
+    PredictedPositions.resize(numParticles);
+    Velocities.resize(numParticles);
+    Densities.resize(numParticles);
+    SpatialIndices.resize(numParticles);
+    SpatialOffsets.resize(numParticles);
+}
+
 // Calculate offsets into the sorted Entries buffer (used for spatial hashing).
 // For example, given an Entries buffer sorted by key like so: {2, 2, 2, 3, 6, 6, 9, 9, 9, 9}
 // The resulting Offsets calculated here should be:            {-, -, 0, 3, -, -, 4, -, -, 6}
@@ -43,16 +53,6 @@ void Physics::Sort(unsigned int id)
 // We can then loop until we reach a particle with a different cell key in order to iterate over all the particles in the cell.
 // 
 // NOTE: offsets buffer must filled with values equal to (or greater than) its length to ensure that this works correctly
-
-
-void Physics::ResizeBuffers() {
-    Positions.resize(numParticles);
-    PredictedPositions.resize(numParticles);
-    Velocities.resize(numParticles);
-    Densities.resize(numParticles);
-    SpatialIndices.resize(numParticles);
-    SpatialOffsets.resize(numParticles);
-}
 
 void Physics::CalculateOffsets(unsigned int id)
 {
@@ -200,9 +200,9 @@ Float2 Physics::CalculateDensityForPos(Float2 pos)
             SpatialEntry indexData = SpatialIndices[currIndex];
             currIndex++;
             // Exit if no longer looking at correct bin
-            //if (indexData.key != key) break;
+            if (indexData.key != key) break;
             // Skip if hash does not match
-            //if (indexData.hash != hash) continue;
+            if (indexData.hash != hash) continue;
 
             ImU32 neighbourIndex = indexData.index;
             Float2 neighbourPos = PredictedPositions[neighbourIndex];
@@ -210,7 +210,7 @@ Float2 Physics::CalculateDensityForPos(Float2 pos)
             float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
-            //if (sqrDstToNeighbour > sqrRadius) continue;
+            if (sqrDstToNeighbour > sqrRadius) continue;
 
             // Calculate density and near density
             float dst = sqrt(sqrDstToNeighbour);
@@ -268,12 +268,24 @@ void Physics::HandleCollisions(ImU32 particleIndex)
     const Float2 halfSize = boundsSize;
     Float2 edgeDst = halfSize - Abs(pos);
 
-    const float SPRITE_SIZE = 25.f;
+    const float SPRITE_SIZE = 15.f;
 
     if (pos.x < SPRITE_SIZE || pos.x > boundsSize.x - SPRITE_SIZE) {
+        if (pos.x < SPRITE_SIZE) {
+            pos.x = SPRITE_SIZE;
+        }
+        else {
+            pos.x = boundsSize.x - SPRITE_SIZE;
+        }
         vel.x *= -1 * collisionDamping;
     }
     if (pos.y < SPRITE_SIZE || pos.y > boundsSize.y - SPRITE_SIZE) {
+        if (pos.y < SPRITE_SIZE) {
+            pos.y = SPRITE_SIZE;
+        }
+        else {
+            pos.y = boundsSize.y - SPRITE_SIZE;
+        }
         vel.y *= -1 * collisionDamping;
     }
 
@@ -372,9 +384,9 @@ void Physics::CalculatePressureForce(int id)
             SpatialEntry indexData = SpatialIndices[currIndex];
             currIndex++;
             // Exit if no longer looking at correct bin
-            //if (indexData.key != key) break;
+            if (indexData.key != key) break;
             // Skip if hash does not match
-            //if (indexData.hash != hash) continue;
+            if (indexData.hash != hash) continue;
 
             ImU32 neighbourIndex = indexData.index;
             // Skip if looking at self
@@ -385,7 +397,7 @@ void Physics::CalculatePressureForce(int id)
             float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
-            //if (sqrDstToNeighbour > sqrRadius) continue;
+            if (sqrDstToNeighbour > sqrRadius) continue;
 
             // Calculate pressure force
             float dst = sqrt(sqrDstToNeighbour);
@@ -431,9 +443,9 @@ void Physics::CalculateViscosity(int id)
             SpatialEntry indexData = SpatialIndices[currIndex];
             currIndex++;
             // Exit if no longer looking at correct bin
-            //if (indexData.key != key) break;
+            if (indexData.key != key) break;
             // Skip if hash does not match
-            //if (indexData.hash != hash) continue;
+            if (indexData.hash != hash) continue;
 
             ImU32 neighbourIndex = indexData.index;
             // Skip if looking at self
@@ -444,7 +456,7 @@ void Physics::CalculateViscosity(int id)
             float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
-            //if (sqrDstToNeighbour > sqrRadius) continue;
+            if (sqrDstToNeighbour > sqrRadius) continue;
 
             float dst = sqrt(sqrDstToNeighbour);
             Float2 neighbourVelocity = Velocities[neighbourIndex];
