@@ -132,20 +132,28 @@ struct Simulation
 #endif
     }
 
-    void RunSimulationStepMultithreaded()
+    void RunThreadPoolBatch(std::function<void(int)> fun)
     {
 #if !RUN_MPI
         int batchSize = physics.numParticles / pool.size();
+
         for (int i = 0; i < physics.numParticles; i += batchSize)
         {
-            pool.enqueueFunction([this, i, batchSize]() {
+            pool.enqueueFunction([this, i, batchSize, &fun]() {
                 for (int index = i; index < i + batchSize && index < physics.numParticles; index++)
                 {
-                    physics.ExternalForces(index);
+                    fun(index);
                 }
             });
         }
         pool.waitUntilAllThreadsWait();
+#endif
+    }
+
+    void RunSimulationStepMultithreaded()
+    {
+#if !RUN_MPI
+        RunThreadPoolBatch([this](int i) { physics.ExternalForces(i); });
 
         for (int i = 0; i < physics.numParticles; i++)
         {
