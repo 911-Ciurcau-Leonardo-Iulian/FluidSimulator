@@ -134,6 +134,7 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+
         {
             static float f = 0.0f;
             static int counter = 0;
@@ -144,7 +145,7 @@ int main(int, char**)
                 static_cast<float>(height)), ImVec2(static_cast<float>(width), static_cast<float>(height)));
             ImGui::SetNextWindowPos(ImVec2(0, 0));
 
-            fluidSimulatorWindow.draw(io);
+            fluidSimulatorWindow.draw(window, io);
 
             // physics should go here
         }

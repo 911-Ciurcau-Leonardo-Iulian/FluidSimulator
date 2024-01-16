@@ -5,6 +5,7 @@
 #define _USE_MATH_DEFINES
 #include <math.h>
 #include <iostream>
+#include <GLFW\glfw3.h>
 
 struct Simulation
 {
@@ -15,8 +16,6 @@ struct Simulation
     void Start()
     {
         //Debug.Log("Controls: Space = Play/Pause, R = Reset, LMB = Attract, RMB = Repel");
-
-        float deltaTime = 1 / 60.f;
 
         frameIndex = 0;
         isPaused = false;
@@ -31,18 +30,48 @@ struct Simulation
         // Set buffer data
         SetInitialBufferData(spawnData);
 
+        const float FACTOR = 2.0f;
+
+        physics.interactionInputPoint = 0.0f;
+        physics.interactionInputRadius = 0.0f;
+        physics.interactionInputStrength  = 0.0f;
+        physics.gravity = 50.0f * FACTOR;
+        physics.collisionDamping = 0.95f;
+        physics.smoothingRadius = 15.f * FACTOR;
+        physics.targetDensity = 6.0f * FACTOR;
+        physics.pressureMultiplier = 30.0f * FACTOR;
+        physics.nearPressureMultiplier = 1.75f * FACTOR;
+        physics.viscosityStrength = 0.075f * FACTOR;
+        physics.boundsSize = { 1280, 720 };
+
         // Init display
         // display.Init(this);
     }
 
-    void Update()
+    void Update(GLFWwindow* window, float currentDeltaTime)
     {
+        physics.deltaTime = currentDeltaTime;
+
         // Run simulation if not in fixed timestep mode
         // (skip running for first few frames as deltaTime can be disproportionaly large)
         //MoveParticles();
         // if (frameIndex > 10)
         // {
-             RunSimulationFrame(deltaTime);
+
+        static bool was_w_pressed = false;
+        bool is_w = glfwGetKey(window, GLFW_KEY_W) == GLFW_PRESS;
+        bool is_a = glfwGetKey(window, GLFW_KEY_A) == GLFW_PRESS;
+        bool is_s = glfwGetKey(window, GLFW_KEY_S) == GLFW_PRESS;
+        bool is_d = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
+
+        //if (!was_w_pressed && is_w) {
+            RunSimulationFrame(physics.deltaTime);
+            was_w_pressed = true;
+        //}
+
+        if (!is_w) {
+            was_w_pressed = false;
+        }
         // }
 
         // if (pauseNextFrame)
@@ -99,16 +128,20 @@ struct Simulation
         {
             physics.CalculateViscosity(i);
         }
+
+        for (int i = 0; i < physics.numParticles; i++) {
+            physics.UpdatePositions(i);
+        }
     }
 
     void UpdateSettings(float deltaTime)
     {
         
-        physics.Poly6ScalingFactor = 4 / (M_PI * pow(smoothingRadius, 8));
-        physics.SpikyPow3ScalingFactor = 10 / (M_PI * pow(smoothingRadius, 5));
-        physics.SpikyPow2ScalingFactor = 6 / (M_PI * pow(smoothingRadius, 4));
-        physics.SpikyPow3DerivativeScalingFactor = 30 / (pow(smoothingRadius, 5) * M_PI);
-        physics.SpikyPow2DerivativeScalingFactor = 12 / (pow(smoothingRadius, 4) * M_PI);
+        physics.Poly6ScalingFactor = 4 / (M_PI * pow(physics.smoothingRadius, 8));
+        physics.SpikyPow3ScalingFactor = 10 / (M_PI * pow(physics.smoothingRadius, 5));
+        physics.SpikyPow2ScalingFactor = 6 / (M_PI * pow(physics.smoothingRadius, 4));
+        physics.SpikyPow3DerivativeScalingFactor = 30 / (pow(physics.smoothingRadius, 5) * M_PI);
+        physics.SpikyPow2DerivativeScalingFactor = 12 / (pow(physics.smoothingRadius, 4) * M_PI);
 
         // Mouse interaction settings:
         /*Float2 mousePos = Camera.main.ScreenToWorldPoint(Input.mousePosition);
@@ -134,6 +167,8 @@ struct Simulation
 
     void HandleInput()
     {
+
+
         //GLFW!!!
         //if (Input.GetKeyDown(KeyCode.Space))
         //{
@@ -189,21 +224,7 @@ struct Simulation
     ParticleSpawner spawner;
 
     float timeScale = 1;
-    bool fixedTimeStep;
     int iterationsPerFrame = 1;
-    float gravity;
-    float collisionDamping = 0.95f;
-    float smoothingRadius = 2;
-    float targetDensity;
-    float pressureMultiplier;
-    float nearPressureMultiplier;
-    float viscosityStrength;
-    Float2 boundsSize;
-    Float2 obstacleSize;
-    Float2 obstacleCentre;
-
-    float interactionRadius;
-    float interactionStrength;
 
      //ParticleDisplay2D display; ????
 
@@ -214,6 +235,5 @@ struct Simulation
     bool pauseNextFrame;
 
     int frameIndex;
-    float deltaTime;
 };
 

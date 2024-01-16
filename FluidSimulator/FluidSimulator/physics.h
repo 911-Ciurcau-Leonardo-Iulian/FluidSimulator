@@ -19,8 +19,6 @@ struct Entry
 struct Physics
 {
     //GPUSort
-    std::vector<Entry> Entries;
-    std::vector<unsigned int> Offsets;
     //unsigned int numEntries;
     unsigned int groupWidth;
     unsigned int groupHeight;
@@ -89,7 +87,7 @@ struct Physics
 
     float ViscosityKernel(float dst, float radius);
 
-    Float2 CalculateDensity(Float2 pos);
+    Float2 CalculateDensityForPos(Float2 pos);
 
     float PressureFromDensity(float density);
 
@@ -103,7 +101,7 @@ struct Physics
 
     void UpdateSpatialHash(int id);
 
-    void CalculateDensities(int id);
+    void CalculateDensity(int id);
 
     void CalculatePressureForce(int id);
 

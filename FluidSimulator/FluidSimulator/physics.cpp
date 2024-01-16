@@ -18,15 +18,15 @@ void Physics::Sort(unsigned int id)
     // Exit if out of bounds (for non-power of 2 input sizes)
     if (indexRight >= numParticles) return;
 
-    unsigned int valueLeft = Entries[indexLeft].key;
-    unsigned int valueRight = Entries[indexRight].key;
+    unsigned int valueLeft = SpatialIndices[indexLeft].key;
+    unsigned int valueRight = SpatialIndices[indexRight].key;
 
     // Swap entries if value is descending
     if (valueLeft > valueRight)
     {
-        Entry temp = Entries[indexLeft];
-        Entries[indexLeft] = Entries[indexRight];
-        Entries[indexRight] = temp;
+        SpatialEntry temp = SpatialIndices[indexLeft];
+        SpatialIndices[indexLeft] = SpatialIndices[indexRight];
+        SpatialIndices[indexRight] = temp;
     }
 }
 
@@ -46,8 +46,6 @@ void Physics::Sort(unsigned int id)
 
 
 void Physics::ResizeBuffers() {
-    Entries.resize(numParticles);
-    Offsets.resize(numParticles);
     Positions.resize(numParticles);
     PredictedPositions.resize(numParticles);
     Velocities.resize(numParticles);
@@ -63,12 +61,12 @@ void Physics::CalculateOffsets(unsigned int id)
     unsigned int i = id;
     unsigned int null = numParticles;
 
-    unsigned int key = Entries[i].key;
-    unsigned int keyPrev = i == 0 ? null : Entries[i - 1].key;
+    unsigned int key = SpatialIndices[i].key;
+    unsigned int keyPrev = i == 0 ? null : SpatialIndices[i - 1].key;
 
     if (key != keyPrev)
     {
-        Offsets[key] = i;
+        SpatialOffsets[key] = i;
     }
 }
 
@@ -183,7 +181,7 @@ float Physics::ViscosityKernel(float dst, float radius)
     return SmoothingKernelPoly6(dst, smoothingRadius);
 }
 
-Float2 Physics::CalculateDensity(Float2 pos)
+Float2 Physics::CalculateDensityForPos(Float2 pos)
 {
     Int2 originCell = GetCell2D(pos, smoothingRadius);
     float sqrRadius = smoothingRadius * smoothingRadius;
@@ -202,9 +200,9 @@ Float2 Physics::CalculateDensity(Float2 pos)
             SpatialEntry indexData = SpatialIndices[currIndex];
             currIndex++;
             // Exit if no longer looking at correct bin
-            if (indexData.key != key) break;
+            //if (indexData.key != key) break;
             // Skip if hash does not match
-            if (indexData.hash != hash) continue;
+            //if (indexData.hash != hash) continue;
 
             ImU32 neighbourIndex = indexData.index;
             Float2 neighbourPos = PredictedPositions[neighbourIndex];
@@ -212,7 +210,7 @@ Float2 Physics::CalculateDensity(Float2 pos)
             float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
-            if (sqrDstToNeighbour > sqrRadius) continue;
+            //if (sqrDstToNeighbour > sqrRadius) continue;
 
             // Calculate density and near density
             float dst = sqrt(sqrDstToNeighbour);
@@ -222,8 +220,6 @@ Float2 Physics::CalculateDensity(Float2 pos)
     }
 
     return Float2(density, nearDensity);
-
-    return {};
 }
 
 float Physics::PressureFromDensity(float density)
@@ -269,35 +265,44 @@ void Physics::HandleCollisions(ImU32 particleIndex)
     Float2 vel = Velocities[particleIndex];
 
     // Keep particle inside bounds
-    const Float2 halfSize = boundsSize * 0.5;
+    const Float2 halfSize = boundsSize;
     Float2 edgeDst = halfSize - Abs(pos);
 
-    if (edgeDst.x <= 0)
-    {
-        pos.x = halfSize.x * sign(pos.x);
+    const float SPRITE_SIZE = 25.f;
+
+    if (pos.x < SPRITE_SIZE || pos.x > boundsSize.x - SPRITE_SIZE) {
         vel.x *= -1 * collisionDamping;
     }
-    if (edgeDst.y <= 0)
-    {
-        pos.y = halfSize.y * sign(pos.y);
+    if (pos.y < SPRITE_SIZE || pos.y > boundsSize.y - SPRITE_SIZE) {
         vel.y *= -1 * collisionDamping;
     }
 
-    // Collide particle against the test obstacle
-    const Float2 obstacleHalfSize = obstacleSize * 0.5;
-    Float2 obstacleEdgeDst = obstacleHalfSize - Abs(pos - obstacleCentre);
+    //if (edgeDst.x <= 0)
+    //{
+    //    pos.x = halfSize.x * sign(pos.x);
+    //    vel.x *= -1 * collisionDamping;
+    //}
+    //if (edgeDst.y <= 0)
+    //{
+    //    pos.y = halfSize.y * sign(pos.y);
+    //    vel.y *= -1 * collisionDamping;
+    //}
 
-    if (obstacleEdgeDst.x >= 0 && obstacleEdgeDst.y >= 0)
-    {
-        if (obstacleEdgeDst.x < obstacleEdgeDst.y) {
-            pos.x = obstacleHalfSize.x * sign(pos.x - obstacleCentre.x) + obstacleCentre.x;
-            vel.x *= -1 * collisionDamping;
-        }
-        else {
-            pos.y = obstacleHalfSize.y * sign(pos.y - obstacleCentre.y) + obstacleCentre.y;
-            vel.y *= -1 * collisionDamping;
-        }
-    }
+    // Collide particle against the test obstacle
+    //const Float2 obstacleHalfSize = obstacleSize * 0.5;
+    //Float2 obstacleEdgeDst = obstacleHalfSize - Abs(pos - obstacleCentre);
+
+    //if (obstacleEdgeDst.x >= 0 && obstacleEdgeDst.y >= 0)
+    //{
+    //    if (obstacleEdgeDst.x < obstacleEdgeDst.y) {
+    //        pos.x = obstacleHalfSize.x * sign(pos.x - obstacleCentre.x) + obstacleCentre.x;
+    //        vel.x *= -1 * collisionDamping;
+    //    }
+    //    else {
+    //        pos.y = obstacleHalfSize.y * sign(pos.y - obstacleCentre.y) + obstacleCentre.y;
+    //        vel.y *= -1 * collisionDamping;
+    //    }
+    //}
 
     // Update position and velocity
     Positions[particleIndex] = pos;
@@ -332,12 +337,12 @@ void Physics::UpdateSpatialHash(int id)
 }
 
 
-void Physics::CalculateDensities(int id)
+void Physics::CalculateDensity(int id)
 {
     if (id >= numParticles) return;
 
     Float2 pos = PredictedPositions[id];
-    Densities[id] = CalculateDensity(pos);
+    Densities[id] = CalculateDensityForPos(pos);
 }
 
 
@@ -367,9 +372,9 @@ void Physics::CalculatePressureForce(int id)
             SpatialEntry indexData = SpatialIndices[currIndex];
             currIndex++;
             // Exit if no longer looking at correct bin
-            if (indexData.key != key) break;
+            //if (indexData.key != key) break;
             // Skip if hash does not match
-            if (indexData.hash != hash) continue;
+            //if (indexData.hash != hash) continue;
 
             ImU32 neighbourIndex = indexData.index;
             // Skip if looking at self
@@ -380,7 +385,7 @@ void Physics::CalculatePressureForce(int id)
             float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
-            if (sqrDstToNeighbour > sqrRadius) continue;
+            //if (sqrDstToNeighbour > sqrRadius) continue;
 
             // Calculate pressure force
             float dst = sqrt(sqrDstToNeighbour);
@@ -400,7 +405,7 @@ void Physics::CalculatePressureForce(int id)
     }
 
     Float2 acceleration = pressureForce / density;
-    Velocities[id] += acceleration * deltaTime;
+    Velocities[id] -= acceleration * deltaTime;
 }
 
 void Physics::CalculateViscosity(int id)
@@ -426,9 +431,9 @@ void Physics::CalculateViscosity(int id)
             SpatialEntry indexData = SpatialIndices[currIndex];
             currIndex++;
             // Exit if no longer looking at correct bin
-            if (indexData.key != key) break;
+            //if (indexData.key != key) break;
             // Skip if hash does not match
-            if (indexData.hash != hash) continue;
+            //if (indexData.hash != hash) continue;
 
             ImU32 neighbourIndex = indexData.index;
             // Skip if looking at self
@@ -439,7 +444,7 @@ void Physics::CalculateViscosity(int id)
             float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
 
             // Skip if not within radius
-            if (sqrDstToNeighbour > sqrRadius) continue;
+            //if (sqrDstToNeighbour > sqrRadius) continue;
 
             float dst = sqrt(sqrDstToNeighbour);
             Float2 neighbourVelocity = Velocities[neighbourIndex];
@@ -447,7 +452,7 @@ void Physics::CalculateViscosity(int id)
         }
 
     }
-    Velocities[id] += viscosityForce * viscosityStrength * deltaTime;
+    Velocities[id] -= viscosityForce * viscosityStrength * deltaTime;
 }
 
 

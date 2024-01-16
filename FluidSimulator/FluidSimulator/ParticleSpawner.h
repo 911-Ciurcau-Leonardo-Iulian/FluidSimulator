@@ -26,7 +26,7 @@ public:
 
     ParticleSpawner() 
     {
-        particleCount = 20;
+        particleCount = 1000;
         initialVelocity = 0;
         spawnCentre = Float2(600, 100);
         spawnSize = 100;

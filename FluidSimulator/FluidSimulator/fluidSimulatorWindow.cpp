@@ -8,9 +8,9 @@ FluidSimulatorWindow::FluidSimulatorWindow()
     simulation.Start();
 }
 
-void FluidSimulatorWindow::draw(ImGuiIO& io)
+void FluidSimulatorWindow::draw(GLFWwindow* window, ImGuiIO& io)
 {
-    simulation.Update();
+    simulation.Update(window, io.DeltaTime);
 
     ImGui::Begin("Fluid Simulator Main Window", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar); 
 

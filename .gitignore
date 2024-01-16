@@ -67,3 +67,4 @@ FluidSimulator/FluidSimulator/Release/
 glfw-3.3.8/
 libs/
 FluidSimulator/FluidSimulator/fluidSimulator
+FluidSimulator/FluidSimulator/example_glfw_opengl3.vcxproj
