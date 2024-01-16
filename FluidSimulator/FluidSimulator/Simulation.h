@@ -132,9 +132,10 @@ struct Simulation
 #endif
     }
 
+#if !RUN_MPI
     void RunThreadPoolBatch(std::function<void(int)> fun)
     {
-#if !RUN_MPI
+
         int batchSize = physics.numParticles / pool.size();
 
         for (int i = 0; i < physics.numParticles; i += batchSize)
@@ -147,12 +148,10 @@ struct Simulation
             });
         }
         pool.waitUntilAllThreadsWait();
-#endif
     }
 
     void RunSimulationStepMultithreaded()
     {
-#if !RUN_MPI
         RunThreadPoolBatch([this](int i) { physics.ExternalForces(i); });
         // RunThreadPoolBatch([this](int i) { physics.UpdateSpatialHash(i); }); // concurrency issues because of the spatial hash...
         for (int i = 0; i < physics.numParticles; i++)
@@ -166,9 +165,8 @@ struct Simulation
         RunThreadPoolBatch([this](int i) { physics.CalculatePressureForce(i); });
         RunThreadPoolBatch([this](int i) { physics.CalculateViscosity(i); });
         RunThreadPoolBatch([this](int i) { physics.UpdatePositions(i); });
-#endif
     }
-
+#else
     void RunSimulationStepMPI()
     {
         for (int i = 0; i < physics.numParticles; i++)
@@ -203,6 +201,7 @@ struct Simulation
             physics.UpdatePositions(i);
         }
     }
+#endif
 
     void UpdateSettings(GLFWwindow* window, float deltaTime)
     {
