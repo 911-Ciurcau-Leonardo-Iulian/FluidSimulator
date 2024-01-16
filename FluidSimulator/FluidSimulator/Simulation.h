@@ -139,7 +139,7 @@ struct Simulation
 
         for (int i = 0; i < physics.numParticles; i += batchSize)
         {
-            pool.enqueueFunction([this, i, batchSize, &fun]() {
+            pool.enqueueFunction([this, i, batchSize, fun]() {
                 for (int index = i; index < i + batchSize && index < physics.numParticles; index++)
                 {
                     fun(index);
@@ -154,7 +154,7 @@ struct Simulation
     {
 #if !RUN_MPI
         RunThreadPoolBatch([this](int i) { physics.ExternalForces(i); });
-
+        // RunThreadPoolBatch([this](int i) { physics.UpdateSpatialHash(i); }); // concurrency issues because of the spatial hash...
         for (int i = 0; i < physics.numParticles; i++)
         {
             physics.UpdateSpatialHash(i);
@@ -162,25 +162,10 @@ struct Simulation
 
         physics.GpuSortAndCalculateOffsets();
 
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.CalculateDensity(i);
-        }
-
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.CalculatePressureForce(i);
-        }
-
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.CalculateViscosity(i);
-        }
-
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.UpdatePositions(i);
-        }
+        RunThreadPoolBatch([this](int i) { physics.CalculateDensity(i); });
+        RunThreadPoolBatch([this](int i) { physics.CalculatePressureForce(i); });
+        RunThreadPoolBatch([this](int i) { physics.CalculateViscosity(i); });
+        RunThreadPoolBatch([this](int i) { physics.UpdatePositions(i); });
 #endif
     }
 
