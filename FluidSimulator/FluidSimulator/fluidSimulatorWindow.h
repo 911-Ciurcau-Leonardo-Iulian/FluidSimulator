@@ -8,7 +8,7 @@ struct GLFWwindow;
 class FluidSimulatorWindow {
 public:
     Simulation simulation;
-    std::vector<ImColor> heatmap;
+    std::vector<ImVec4> heatmap;
 
     FluidSimulatorWindow();
     void draw(GLFWwindow* window, ImGuiIO& io);

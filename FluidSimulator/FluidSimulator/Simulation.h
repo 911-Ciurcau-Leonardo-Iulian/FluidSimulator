@@ -6,6 +6,8 @@
 #include <math.h>
 #include <iostream>
 #include <GLFW\glfw3.h>
+#include <imgui_impl_glfw.h>
+
 
 #define SIMULATION_PARAM_FACTOR 5.0f
 
@@ -18,11 +20,11 @@ struct Simulation
 
     void SetDefaultParams() {
         physics.interactionInputPoint = 0.0f;
-        physics.interactionInputRadius = 10.0f;
-        physics.interactionInputStrength = 10.0f;
-        physics.gravity = 15.0f * SIMULATION_PARAM_FACTOR;
-        physics.collisionDamping = 0.85f;
-        physics.smoothingRadius = 5.5f * SIMULATION_PARAM_FACTOR;
+        physics.interactionInputRadius = 50.0f;
+        physics.interactionInputStrength = 1000.0f;
+        physics.gravity = 40.0f * SIMULATION_PARAM_FACTOR;
+        physics.collisionDamping = 0.4f;
+        physics.smoothingRadius = 2.75f * SIMULATION_PARAM_FACTOR;
         physics.targetDensity = 6.f * SIMULATION_PARAM_FACTOR;
         physics.pressureMultiplier = 30.0f * SIMULATION_PARAM_FACTOR;
         physics.nearPressureMultiplier = 1.75f * SIMULATION_PARAM_FACTOR;
@@ -56,7 +58,7 @@ struct Simulation
         physics.pressureMultiplier = physicsParameters.pressureMultiplier;
         physics.nearPressureMultiplier = physicsParameters.nearPressureMultiplier;
         physics.viscosityStrength = physicsParameters.viscosityStrength;*/
-        physics.boundsSize = { 1280, 720 };
+        physics.boundsSize = { 2500, 1550 };
 
         // Init display
         // display.Init(this);
@@ -64,6 +66,7 @@ struct Simulation
 
     void Update(GLFWwindow* window, float currentDeltaTime)
     {
+        currentDeltaTime = std::min(0.05f, currentDeltaTime);
         physics.deltaTime = currentDeltaTime;
 
         // Run simulation if not in fixed timestep mode
@@ -79,7 +82,7 @@ struct Simulation
         bool is_d = glfwGetKey(window, GLFW_KEY_D) == GLFW_PRESS;
 
         //if (!was_w_pressed && is_w) {
-            RunSimulationFrame(physics.deltaTime);
+            RunSimulationFrame(window, physics.deltaTime);
             was_w_pressed = true;
         //}
 
@@ -97,13 +100,13 @@ struct Simulation
         // HandleInput();
     }
 
-    void RunSimulationFrame(float frameTime)
+    void RunSimulationFrame(GLFWwindow* window, float frameTime)
     {
         if (!isPaused)
         {
             float timeStep = frameTime / iterationsPerFrame * timeScale;
 
-            UpdateSettings(timeStep);
+            UpdateSettings(window, timeStep);
 
             for (int i = 0; i < iterationsPerFrame; i++)
             {
@@ -115,10 +118,6 @@ struct Simulation
     void RunSimulationStep()
     {
         //run tasks
-        for (int i = 0; i < physics.numParticles; i++) {
-            physics.ExternalForces(physics.Positions[i], physics.Velocities[i]);
-        }
-
         for (int i = 0; i < physics.numParticles; i++)
         {
             physics.ExternalForces(i);
@@ -151,7 +150,7 @@ struct Simulation
         }
     }
 
-    void UpdateSettings(float deltaTime)
+    void UpdateSettings(GLFWwindow* window, float deltaTime)
     {
         
         physics.Poly6ScalingFactor = 4 / (M_PI * pow(physics.smoothingRadius, 8));
@@ -162,8 +161,8 @@ struct Simulation
 
         // Mouse interaction settings:
         Float2 mousePos = { ImGui::GetMousePos().x, ImGui::GetMousePos().y };
-        bool isPullInteraction = ImGui::GetIO().MouseClicked[0];
-        bool isPushInteraction = ImGui::GetIO().MouseClicked[1];
+        bool isPullInteraction = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        bool isPushInteraction = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
         float currInteractStrength = 0;
         if (isPushInteraction || isPullInteraction)
         {

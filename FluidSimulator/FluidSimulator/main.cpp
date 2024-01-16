@@ -66,7 +66,7 @@ int main(int, char**)
 #endif
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Fluid Simulator", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(2500, 1550, "Fluid Simulator", nullptr, nullptr);
     if (window == nullptr)
         return 1;
     glfwMakeContextCurrent(window);
@@ -150,7 +150,7 @@ int main(int, char**)
             //glfwMakeContextCurrent(settingsWindow);
             ImGui::Begin("Settings Window", nullptr, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar);
             ImGui::SliderFloat("Interaction Input Radius", &fluidSimulatorWindow.simulation.physics.interactionInputRadius, 0.0f, 1000.0f);
-            ImGui::SliderFloat("Interaction Input Strength", &fluidSimulatorWindow.simulation.physics.interactionInputStrength, 0.0f, 100.0f);
+            ImGui::SliderFloat("Interaction Input Strength", &fluidSimulatorWindow.simulation.physics.interactionInputStrength, 0.0f, 10000.0f);
             ImGui::SliderFloat("Gravity", &fluidSimulatorWindow.simulation.physics.gravity, -100.0f * SIMULATION_PARAM_FACTOR, 100.0f * SIMULATION_PARAM_FACTOR);
             ImGui::SliderFloat("Collision Damping", &fluidSimulatorWindow.simulation.physics.collisionDamping, 0.0f, 1.0f);
             ImGui::SliderFloat("Smoothing Radius", &fluidSimulatorWindow.simulation.physics.smoothingRadius, 0.5f, 10.0f * SIMULATION_PARAM_FACTOR);

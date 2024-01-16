@@ -1,3 +1,4 @@
+#define IMGUI_DEFINE_MATH_OPERATORS
 #include "fluidSimulatorWindow.h"
 #include <time.h>
 #include <iostream>
@@ -8,36 +9,34 @@ struct HeatmapEntry {
     float percentage;
 };
 
-static std::vector<ImColor> constructHeatmap(size_t numberOfEntries, const std::vector<HeatmapEntry>& entries) {
-    std::vector<ImColor> heatmap;
+static std::vector<ImVec4> constructHeatmap(size_t numberOfEntries, const std::vector<HeatmapEntry>& entries) {
+    std::vector<ImVec4> heatmap;
+    heatmap.resize(numberOfEntries);
 
-    if (entries.size() < 2) {
-        return heatmap;
+    auto fill_range = [&heatmap, numberOfEntries](ImVec4 first_color, ImVec4 second_color, float first_percentage, float second_percentage) {
+        size_t range_start = floor(first_percentage * numberOfEntries);
+        size_t range_end = floor(second_percentage * numberOfEntries);
+
+        float step = 1.0f / (range_end - range_start);
+        for (size_t index = 0; index < range_end - range_start; index++) {
+            float interpolation_factor = index * step;
+            float one_minus_factor = 1.0f - interpolation_factor;
+            heatmap[range_start + index] = first_color * ImVec4(interpolation_factor, interpolation_factor, interpolation_factor, interpolation_factor) +
+                second_color * ImVec4(one_minus_factor, one_minus_factor, one_minus_factor, one_minus_factor);
+        }
+    };
+
+    if (entries[0].percentage > 0.0f) {
+        fill_range(entries[0].color, entries[0].color, 0.0f, entries[0].percentage);
     }
 
-    std::vector<HeatmapEntry> sortedEntries = entries;
-    std::sort(sortedEntries.begin(), sortedEntries.end(),
-        [](const HeatmapEntry& a, const HeatmapEntry& b) {
-            return a.percentage < b.percentage;
-        });
+    for (size_t index = 0; index < entries.size() - 1; index++) {
+        fill_range(entries[index].color, entries[index + 1].color, entries[index].percentage, entries[index + 1].percentage);
+    }
 
-    for (size_t i = 0; i < numberOfEntries; ++i) {
-        float t = static_cast<float>(i) / (numberOfEntries - 1);  // Interpolation factor
-
-        size_t index = 0;
-        while (index < sortedEntries.size() - 1 && t > sortedEntries[index + 1].percentage) {
-            ++index;
-        }
-
-        const ImColor& color1 = sortedEntries[index].color;
-        const ImColor& color2 = sortedEntries[index + 1].color;
-
-        int r = static_cast<int>(ImLerp(color1.Value.x, color2.Value.x, (t - sortedEntries[index].percentage) / (sortedEntries[index + 1].percentage - sortedEntries[index].percentage)));
-        int g = static_cast<int>(ImLerp(color1.Value.y, color2.Value.y, (t - sortedEntries[index].percentage) / (sortedEntries[index + 1].percentage - sortedEntries[index].percentage)));
-        int b = static_cast<int>(ImLerp(color1.Value.z, color2.Value.z, (t - sortedEntries[index].percentage) / (sortedEntries[index + 1].percentage - sortedEntries[index].percentage)));
-        int a = static_cast<int>(ImLerp(color1.Value.w, color2.Value.w, (t - sortedEntries[index].percentage) / (sortedEntries[index + 1].percentage - sortedEntries[index].percentage)));
-
-        heatmap.push_back(ImColor(r, g, b, a));
+    if (entries[entries.size() - 1].percentage < 1.0f) {
+        ImColor last_color = entries[entries.size() - 1].color;
+        fill_range(last_color, last_color, entries[entries.size() - 1].percentage, 1.0f);
     }
 
     return heatmap;
@@ -46,13 +45,17 @@ static std::vector<ImColor> constructHeatmap(size_t numberOfEntries, const std::
 FluidSimulatorWindow::FluidSimulatorWindow()
 {
     std::vector<HeatmapEntry> entries = {
-        {ImColor(0, 0, 255), 0.0f},
-        {ImColor(0, 255, 0), 0.25f},
-        {ImColor(255, 255, 0), 0.50f},
-        {ImColor(255, 0, 0), 1.0f}
+        {ImColor(28, 70, 158), 0.15f},
+        {ImColor(94, 255, 149), 0.5f},
+        {ImColor(251, 248, 17), 0.70f},
+        {ImColor(173, 73, 43), 1.0f}
     };
+    /*std::vector<HeatmapEntry> entries = {
+        {ImColor(200, 53, 43), 0.2f},
+        {ImColor(251, 248, 17), 0.80f}
+    };*/
 
-    heatmap = constructHeatmap(10, entries);
+    heatmap = constructHeatmap(1024, entries);
     srand(time(NULL));
     simulation.Start();
 }
@@ -79,18 +82,23 @@ void FluidSimulatorWindow::draw(GLFWwindow* window, ImGuiIO& io)
         drawParticle(simulation.physics.Positions[i], simulation.physics.Velocities[i]);
     }
 
+    ImGui::GetWindowDrawList()->AddCircle(simulation.physics.interactionInputPoint, simulation.physics.interactionInputRadius, IM_COL32(255, 30, 30, 255));
+
     ImGui::End();
 }
 
 void FluidSimulatorWindow::drawParticle(Float2 position, Float2 velocity) 
 {
-    auto radius = 8;
+    auto radius = 4;
     float speed = Dot(velocity, velocity);
-    speed = std::min(speed, 100.f);
-    float percentage = speed / 100.f;
+    static float MAX_SPEED = 0.0f;
+    MAX_SPEED = std::max(MAX_SPEED, speed);
+
+    speed = std::min(speed, 300'000.f);
+    float percentage = speed / 300'000.f;
     size_t heatmapIndex = percentage * (heatmap.size() - 1);
     auto color = heatmap[heatmapIndex];
     ImU32 strokeColor = IM_COL32(255, 255, 255, 255);
-    ImGui::GetWindowDrawList()->AddCircleFilled(position, radius, color);
-    ImGui::GetWindowDrawList()->AddCircle(position, radius, strokeColor);
+    ImGui::GetWindowDrawList()->AddCircleFilled(position, radius, ImColor(color));
+    //ImGui::GetWindowDrawList()->AddCircle(position, radius, strokeColor);
 }
