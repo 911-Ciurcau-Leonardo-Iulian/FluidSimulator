@@ -1,14 +1,16 @@
 #pragma once
 #include "imgui.h"
 #include "Simulation.h"
+#include <vector>
 
 struct GLFWwindow;
 
 class FluidSimulatorWindow {
-private:
-    Simulation simulation;
 public:
+    Simulation simulation;
+    std::vector<ImColor> heatmap;
+
     FluidSimulatorWindow();
     void draw(GLFWwindow* window, ImGuiIO& io);
-    static void drawParticle(Float2 position);
+    void drawParticle(Float2 position, Float2 velocity);
 };

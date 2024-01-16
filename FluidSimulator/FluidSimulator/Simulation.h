@@ -7,10 +7,26 @@
 #include <iostream>
 #include <GLFW\glfw3.h>
 
+#define SIMULATION_PARAM_FACTOR 5.0f
+
 struct Simulation
 {
     Simulation()
     {
+        SetDefaultParams();
+    }
+
+    void SetDefaultParams() {
+        physics.interactionInputPoint = 0.0f;
+        physics.interactionInputRadius = 0.0f;
+        physics.interactionInputStrength = 0.0f;
+        physics.gravity = 15.0f * SIMULATION_PARAM_FACTOR;
+        physics.collisionDamping = 0.85f;
+        physics.smoothingRadius = 5.5f * SIMULATION_PARAM_FACTOR;
+        physics.targetDensity = 6.f * SIMULATION_PARAM_FACTOR;
+        physics.pressureMultiplier = 30.0f * SIMULATION_PARAM_FACTOR;
+        physics.nearPressureMultiplier = 1.75f * SIMULATION_PARAM_FACTOR;
+        physics.viscosityStrength = 0.075f * SIMULATION_PARAM_FACTOR;
     }
 
     void Start()
@@ -30,18 +46,16 @@ struct Simulation
         // Set buffer data
         SetInitialBufferData(spawnData);
 
-        const float FACTOR = 5.0f;
-
-        physics.interactionInputPoint = 0.0f;
-        physics.interactionInputRadius = 0.0f;
-        physics.interactionInputStrength  = 0.0f;
-        physics.gravity = 15.0f * FACTOR;
-        physics.collisionDamping = 0.85f;
-        physics.smoothingRadius = 5.5f * FACTOR;
-        physics.targetDensity = 6.f * FACTOR;
-        physics.pressureMultiplier = 30.0f * FACTOR;
-        physics.nearPressureMultiplier = 1.75f * FACTOR;
-        physics.viscosityStrength = 0.075f * FACTOR;
+        /*physics.interactionInputPoint = physicsParameters.interactionInputPoint;
+        physics.interactionInputRadius = physicsParameters.interactionInputRadius;
+        physics.interactionInputStrength  = physicsParameters.interactionInputStrength;
+        physics.gravity = physicsParameters.gravity;
+        physics.collisionDamping = physicsParameters.collisionDamping;
+        physics.smoothingRadius = physicsParameters.smoothingRadius;
+        physics.targetDensity = physicsParameters.targetDensity;
+        physics.pressureMultiplier = physicsParameters.pressureMultiplier;
+        physics.nearPressureMultiplier = physicsParameters.nearPressureMultiplier;
+        physics.viscosityStrength = physicsParameters.viscosityStrength;*/
         physics.boundsSize = { 1280, 720 };
 
         // Init display
@@ -100,7 +114,6 @@ struct Simulation
 
     void RunSimulationStep()
     {
-        std::cout << "RUN SIMULATION STEP\n\n";
         //run tasks
         for (int i = 0; i < physics.numParticles; i++)
         {
