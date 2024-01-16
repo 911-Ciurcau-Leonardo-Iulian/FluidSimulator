@@ -58,7 +58,7 @@ struct Simulation
         physics.pressureMultiplier = physicsParameters.pressureMultiplier;
         physics.nearPressureMultiplier = physicsParameters.nearPressureMultiplier;
         physics.viscosityStrength = physicsParameters.viscosityStrength;*/
-        physics.boundsSize = { 2500, 1550 };
+        physics.boundsSize = { 2500, 1150 };
 
         // Init display
         // display.Init(this);
@@ -66,7 +66,7 @@ struct Simulation
 
     void Update(GLFWwindow* window, float currentDeltaTime)
     {
-        currentDeltaTime = std::min(0.05f, currentDeltaTime);
+        currentDeltaTime = std::min(0.02f, currentDeltaTime);
         physics.deltaTime = currentDeltaTime;
 
         // Run simulation if not in fixed timestep mode

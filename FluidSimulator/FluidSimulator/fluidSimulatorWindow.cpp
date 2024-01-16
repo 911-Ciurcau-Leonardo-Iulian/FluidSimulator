@@ -44,16 +44,23 @@ static std::vector<ImVec4> constructHeatmap(size_t numberOfEntries, const std::v
 
 FluidSimulatorWindow::FluidSimulatorWindow()
 {
-    std::vector<HeatmapEntry> entries = {
+    /*std::vector<HeatmapEntry> entries = {
         {ImColor(28, 70, 158), 0.15f},
         {ImColor(94, 255, 149), 0.5f},
         {ImColor(251, 248, 17), 0.70f},
         {ImColor(173, 73, 43), 1.0f}
-    };
+    };*/
     /*std::vector<HeatmapEntry> entries = {
         {ImColor(200, 53, 43), 0.2f},
         {ImColor(251, 248, 17), 0.80f}
     };*/
+
+    std::vector<HeatmapEntry> entries = {
+        {ImColor(28, 70, 158), 0.15f},
+        {ImColor(94, 190, 149), 0.5f},
+        {ImColor(200, 200, 17), 0.70f},
+        {ImColor(200, 73, 43), 1.0f}
+    };
 
     heatmap = constructHeatmap(1024, entries);
     srand(time(NULL));
@@ -90,12 +97,15 @@ void FluidSimulatorWindow::draw(GLFWwindow* window, ImGuiIO& io)
 void FluidSimulatorWindow::drawParticle(Float2 position, Float2 velocity) 
 {
     auto radius = 4;
-    float speed = Dot(velocity, velocity);
+    float speed = std::sqrt(Dot(velocity, velocity));
     static float MAX_SPEED = 0.0f;
     MAX_SPEED = std::max(MAX_SPEED, speed);
 
-    speed = std::min(speed, 300'000.f);
-    float percentage = speed / 300'000.f;
+    speed = std::min(speed, 2000.f);
+    float percentage = speed / 2000.f;
+    float percentage_sq = percentage * percentage;
+    float interpolation_factor = 0.0f;
+    percentage = percentage_sq * interpolation_factor + percentage * (1 - interpolation_factor);
     size_t heatmapIndex = percentage * (heatmap.size() - 1);
     auto color = heatmap[heatmapIndex];
     ImU32 strokeColor = IM_COL32(255, 255, 255, 255);

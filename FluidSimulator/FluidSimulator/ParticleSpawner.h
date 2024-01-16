@@ -26,10 +26,10 @@ public:
 
     ParticleSpawner() 
     {
-        particleCount = 5000;
+        particleCount = 4000;
         initialVelocity = 0;
         spawnCentre = Float2(600, 300);
-        spawnSize = 100;
+        spawnSize = 300;
         showSpawnBoundsGizmos = false;
     }
 
