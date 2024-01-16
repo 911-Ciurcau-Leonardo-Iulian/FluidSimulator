@@ -58,6 +58,12 @@
     <ClCompile Include="GPU\Simulation.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="GPU\Shader.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\VertexBuffer.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -89,6 +95,8 @@
     <ClInclude Include="GPU\GeneralSettings.h" />
     <ClInclude Include="GPU\Buffers.h" />
     <ClInclude Include="GPU\Simulation.h" />
+    <ClInclude Include="GPU\Shader.h" />
+    <ClInclude Include="GPU\VertexBuffer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
@@ -102,5 +110,7 @@
     <None Include="GPU\Shaders\simulation_late.comp" />
     <None Include="GPU\Shaders\sort.comp" />
     <None Include="GPU\Shaders\sort_calculate_offsets.comp" />
+    <None Include="GPU\Shaders\sprite.vert" />
+    <None Include="GPU\Shaders\sprite.frag" />
   </ItemGroup>
 </Project>

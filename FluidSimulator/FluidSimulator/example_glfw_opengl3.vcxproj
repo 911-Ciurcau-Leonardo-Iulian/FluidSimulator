@@ -171,7 +171,9 @@
     <ClCompile Include="GPU\ComputeShader.cpp" />
     <ClCompile Include="GPU\glad.c" />
     <ClCompile Include="GPU\MathConstants.cpp" />
+    <ClCompile Include="GPU\Shader.cpp" />
     <ClCompile Include="GPU\Simulation.cpp" />
+    <ClCompile Include="GPU\VertexBuffer.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="particle.cpp" />
     <ClCompile Include="physics.cpp" />
@@ -191,6 +193,8 @@
     <ClInclude Include="GPU\khrplatform.h" />
     <ClInclude Include="GPU\MathConstants.h" />
     <ClInclude Include="GPU\Simulation.h" />
+    <ClInclude Include="GPU\Shader.h" />
+    <ClInclude Include="GPU\VertexBuffer.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="Vec2.h" />
@@ -203,6 +207,8 @@
     <None Include="GPU\Shaders\simulation_late.comp" />
     <None Include="GPU\Shaders\sort.comp" />
     <None Include="GPU\Shaders\sort_calculate_offsets.comp" />
+    <None Include="GPU\Shaders\sprite.frag" />
+    <None Include="GPU\Shaders\sprite.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
