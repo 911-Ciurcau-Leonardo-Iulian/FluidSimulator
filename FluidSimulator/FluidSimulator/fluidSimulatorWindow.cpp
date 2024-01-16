@@ -19,7 +19,7 @@ static std::vector<ImVec4> constructHeatmap(size_t numberOfEntries, const std::v
 
         float step = 1.0f / (range_end - range_start);
         for (size_t index = 0; index < range_end - range_start; index++) {
-            float interpolation_factor = index * step;
+            float interpolation_factor = 1.0f - index * step;
             float one_minus_factor = 1.0f - interpolation_factor;
             heatmap[range_start + index] = first_color * ImVec4(interpolation_factor, interpolation_factor, interpolation_factor, interpolation_factor) +
                 second_color * ImVec4(one_minus_factor, one_minus_factor, one_minus_factor, one_minus_factor);

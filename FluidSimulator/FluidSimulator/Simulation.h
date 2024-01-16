@@ -7,7 +7,8 @@
 #include <iostream>
 #include <GLFW\glfw3.h>
 #include <imgui_impl_glfw.h>
-
+#include <thread>
+#include "ThreadPool.h"
 
 #define SIMULATION_PARAM_FACTOR 4.0f
 #define SCREEN_WIDTH 1920
@@ -36,8 +37,12 @@ struct Simulation
 
     void Start()
     {
+#if !RUN_MPI
+        pool.~ThreadPool(); // reset thread pool
+        const auto available_thread_count = (std::thread::hardware_concurrency() - 1); // minus current main thread
+        new(&pool) ThreadPool(available_thread_count); // c++...
+#endif
         //Debug.Log("Controls: Space = Play/Pause, R = Reset, LMB = Attract, RMB = Repel");
-
         frameIndex = 0;
         isPaused = false;
         pauseNextFrame = false;
@@ -62,7 +67,6 @@ struct Simulation
         physics.nearPressureMultiplier = physicsParameters.nearPressureMultiplier;
         physics.viscosityStrength = physicsParameters.viscosityStrength;*/
         physics.boundsSize = { SCREEN_WIDTH, SCREEN_HEIGHT };
-
         // Init display
         // display.Init(this);
     }
@@ -130,6 +134,50 @@ struct Simulation
 
     void RunSimulationStepMultithreaded()
     {
+#if !RUN_MPI
+        int batchSize = physics.numParticles / pool.size();
+        for (int i = 0; i < physics.numParticles; i += batchSize)
+        {
+            pool.enqueueFunction([this, i, batchSize]() {
+                for (int index = i; index < i + batchSize && index < physics.numParticles; index++)
+                {
+                    physics.ExternalForces(index);
+                }
+            });
+        }
+        pool.waitUntilAllThreadsWait();
+
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.UpdateSpatialHash(i);
+        }
+
+        physics.GpuSortAndCalculateOffsets();
+
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.CalculateDensity(i);
+        }
+
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.CalculatePressureForce(i);
+        }
+
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.CalculateViscosity(i);
+        }
+
+        for (int i = 0; i < physics.numParticles; i++)
+        {
+            physics.UpdatePositions(i);
+        }
+#endif
+    }
+
+    void RunSimulationStepMPI()
+    {
         for (int i = 0; i < physics.numParticles; i++)
         {
             physics.ExternalForces(i);
@@ -161,11 +209,6 @@ struct Simulation
         {
             physics.UpdatePositions(i);
         }
-    }
-
-    void RunSimulationStepMPI()
-    {
-
     }
 
     void UpdateSettings(GLFWwindow* window, float deltaTime)
@@ -255,6 +298,9 @@ struct Simulation
 
     Physics physics;
     ParticleSpawner spawner;
+#if !RUN_MPI
+    ThreadPool pool;
+#endif
 
     float timeScale = 1;
     int iterationsPerFrame = 1;

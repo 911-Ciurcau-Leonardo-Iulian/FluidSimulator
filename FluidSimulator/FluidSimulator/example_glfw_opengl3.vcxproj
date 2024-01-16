@@ -172,6 +172,7 @@
     <ClCompile Include="ParticleSpawner.cpp" />
     <ClCompile Include="physics.cpp" />
     <ClCompile Include="Simulation.cpp" />
+    <ClCompile Include="ThreadPool.cpp" />
     <ClCompile Include="Vec2.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -186,6 +187,7 @@
     <ClInclude Include="ParticleSpawner.h" />
     <ClInclude Include="physics.h" />
     <ClInclude Include="Simulation.h" />
+    <ClInclude Include="ThreadPool.h" />
     <ClInclude Include="Vec2.h" />
   </ItemGroup>
   <ItemGroup>
