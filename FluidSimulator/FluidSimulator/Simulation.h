@@ -175,10 +175,6 @@ struct Simulation
     void RunSimulationStepMPI()
     {
         ExternalForcesMPI();
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.ExternalForces(i);
-        }
 
         for (int i = 0; i < physics.numParticles; i++)
         {
@@ -225,6 +221,17 @@ struct Simulation
             MPI_Ssend(&physics.currentInteractionInputStrength, 1, MPI_FLOAT, i + 1, 6, MPI_COMM_WORLD);
             MPI_Ssend(&physics.interactionInputPoint, 2, MPI_FLOAT, i + 1, 7, MPI_COMM_WORLD);
             MPI_Ssend(&physics.interactionInputRadius, 1, MPI_FLOAT, i + 1, 8, MPI_COMM_WORLD);
+        }
+
+        MPI_Status status;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Recv(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 9, MPI_COMM_WORLD, &status);
+            MPI_Recv(physics.PredictedPositions.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 10, MPI_COMM_WORLD, &status);
         }
     }
 #endif
