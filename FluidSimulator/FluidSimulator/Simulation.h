@@ -184,19 +184,9 @@ struct Simulation
         physics.GpuSortAndCalculateOffsets();
 
         CalculateDensityMPI();
-
         CalculatePressureForceMPI();
-
         CalculateViscosityMPI();
-        //for (int i = 0; i < physics.numParticles; i++)
-        //{
-        //    physics.CalculateViscosity(i);
-        //}
-
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.UpdatePositions(i);
-        }
+        UpdatePositionsMPI();
     }
 
     void ExternalForcesMPI()
@@ -306,6 +296,31 @@ struct Simulation
             int actualChunkSize = end - start;
 
             MPI_Recv(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 26, MPI_COMM_WORLD, &status);
+        }
+    }
+
+    void UpdatePositionsMPI()
+    {
+        int chunk_size = physics.numParticles / mpiWorkersCount;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Ssend(&physics.boundsSize, 2, MPI_FLOAT, i + 1, 27, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.collisionDamping, 1, MPI_FLOAT, i + 1, 28, MPI_COMM_WORLD);
+        }
+
+        MPI_Status status;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Recv(physics.Positions.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 29, MPI_COMM_WORLD, &status);
+            MPI_Recv(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 30, MPI_COMM_WORLD, &status);
         }
     }
 #endif

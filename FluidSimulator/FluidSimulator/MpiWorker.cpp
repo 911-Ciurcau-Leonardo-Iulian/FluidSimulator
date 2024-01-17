@@ -9,8 +9,8 @@ void MpiWorker::run()
         smoothingRadius, SpikyPow2ScalingFactor, SpikyPow3ScalingFactor,
         targetDensity, pressureMultiplier, nearPressureMultiplier,
         SpikyPow2DerivativeScalingFactor, spikyPow3DerivativeScalingFactor,
-        Poly6ScalingFactor, viscosityStrength;
-    Float2 interactionInputPoint;
+        Poly6ScalingFactor, viscosityStrength, collisionDamping;
+    Float2 interactionInputPoint, boundsSize;
     std::vector<ImU32> SpatialOffsets;
     ImU32 numParticles;
     std::vector<SpatialEntry> SpatialIndices;
@@ -116,6 +116,21 @@ void MpiWorker::run()
         }
 
         MPI_Send(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 26, MPI_COMM_WORLD);
+
+
+        // UpdatePositions
+
+        MPI_Recv(&boundsSize, 2, MPI_FLOAT, 0, 27, MPI_COMM_WORLD, &status);
+        MPI_Recv(&collisionDamping, 1, MPI_FLOAT, 0, 28, MPI_COMM_WORLD, &status);
+
+        for (int i = 0; i < batchSize; i++)
+        {
+            UpdatePositions(i, numParticles, Positions, Velocities, deltaTime,
+                boundsSize, collisionDamping);
+        }
+
+        MPI_Send(Positions.data(), batchSize * 2, MPI_FLOAT, 0, 29, MPI_COMM_WORLD);
+        MPI_Send(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 30, MPI_COMM_WORLD);
     }
 }
 
@@ -416,4 +431,76 @@ float MpiWorker::ViscosityKernel(float dst, float radius, float Poly6ScalingFact
         return v * v * v * Poly6ScalingFactor;
     }
     return 0;
+}
+
+void MpiWorker::UpdatePositions(int id, int numParticles, std::vector<Float2>& Positions,
+    std::vector<Float2>& Velocities, float deltaTime, Float2 boundsSize, float collisionDamping)
+{
+    if (id >= numParticles) return;
+
+    Positions[id] += Velocities[id] * deltaTime;
+    HandleCollisions(id, Positions, Velocities, boundsSize, collisionDamping);
+}
+
+void MpiWorker::HandleCollisions(ImU32 particleIndex, std::vector<Float2>& Positions,
+    std::vector<Float2>& Velocities, Float2 boundsSize, float collisionDamping)
+{
+    Float2 pos = Positions[particleIndex];
+    Float2 vel = Velocities[particleIndex];
+
+    // Keep particle inside bounds
+    const Float2 halfSize = boundsSize;
+    Float2 edgeDst = halfSize - Abs(pos);
+
+    const float SPRITE_SIZE = 15.f;
+
+    if (pos.x < SPRITE_SIZE || pos.x > boundsSize.x - SPRITE_SIZE) {
+        if (pos.x < SPRITE_SIZE) {
+            pos.x = SPRITE_SIZE;
+        }
+        else {
+            pos.x = boundsSize.x - SPRITE_SIZE;
+        }
+        vel.x *= -1 * collisionDamping;
+    }
+    if (pos.y < SPRITE_SIZE || pos.y > boundsSize.y - SPRITE_SIZE) {
+        if (pos.y < SPRITE_SIZE) {
+            pos.y = SPRITE_SIZE;
+        }
+        else {
+            pos.y = boundsSize.y - SPRITE_SIZE;
+        }
+        vel.y *= -1 * collisionDamping;
+    }
+
+    //if (edgeDst.x <= 0)
+    //{
+    //    pos.x = halfSize.x * sign(pos.x);
+    //    vel.x *= -1 * collisionDamping;
+    //}
+    //if (edgeDst.y <= 0)
+    //{
+    //    pos.y = halfSize.y * sign(pos.y);
+    //    vel.y *= -1 * collisionDamping;
+    //}
+
+    // Collide particle against the test obstacle
+    //const Float2 obstacleHalfSize = obstacleSize * 0.5;
+    //Float2 obstacleEdgeDst = obstacleHalfSize - Abs(pos - obstacleCentre);
+
+    //if (obstacleEdgeDst.x >= 0 && obstacleEdgeDst.y >= 0)
+    //{
+    //    if (obstacleEdgeDst.x < obstacleEdgeDst.y) {
+    //        pos.x = obstacleHalfSize.x * sign(pos.x - obstacleCentre.x) + obstacleCentre.x;
+    //        vel.x *= -1 * collisionDamping;
+    //    }
+    //    else {
+    //        pos.y = obstacleHalfSize.y * sign(pos.y - obstacleCentre.y) + obstacleCentre.y;
+    //        vel.y *= -1 * collisionDamping;
+    //    }
+    //}
+
+    // Update position and velocity
+    Positions[particleIndex] = pos;
+    Velocities[particleIndex] = vel;
 }

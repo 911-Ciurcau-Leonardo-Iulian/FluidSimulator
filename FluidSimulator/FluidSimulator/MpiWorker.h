@@ -77,4 +77,8 @@ public:
     );
 
     float ViscosityKernel(float dst, float radius, float Poly6ScalingFactor);
+    void UpdatePositions(int id, int numParticles, std::vector<Float2>& Positions,
+        std::vector<Float2>& Velocities, float deltaTime, Float2 boundsSize, float collisionDamping);
+    void HandleCollisions(ImU32 particleIndex, std::vector<Float2>& Positions,
+        std::vector<Float2>& Velocities, Float2 boundsSize, float collisionDamping);
 };
