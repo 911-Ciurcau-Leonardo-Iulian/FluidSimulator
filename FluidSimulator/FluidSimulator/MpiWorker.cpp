@@ -6,7 +6,9 @@ void MpiWorker::run()
     int batchSize;
     std::vector<Float2> Velocities, Positions, PredictedPositions, Densities;
     float deltaTime, gravity, currentInteractionInputStrength, interactionInputRadius,
-        smoothingRadius, SpikyPow2ScalingFactor, SpikyPow3ScalingFactor;
+        smoothingRadius, SpikyPow2ScalingFactor, SpikyPow3ScalingFactor,
+        targetDensity, pressureMultiplier, nearPressureMultiplier,
+        SpikyPow2DerivativeScalingFactor, spikyPow3DerivativeScalingFactor;
     Float2 interactionInputPoint;
     std::vector<ImU32> SpatialOffsets;
     ImU32 numParticles;
@@ -44,6 +46,7 @@ void MpiWorker::run()
         MPI_Send(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 9, MPI_COMM_WORLD);
         MPI_Send(PredictedPositions.data(), batchSize * 2, MPI_FLOAT, 0, 10, MPI_COMM_WORLD);
 
+
         // CalculateDensity
 
 
@@ -75,6 +78,27 @@ void MpiWorker::run()
         }
 
         MPI_Send(Densities.data(), batchSize * 2, MPI_FLOAT, 0, 17, MPI_COMM_WORLD);
+
+
+        // CalculatePressureForce
+
+        MPI_Recv(&targetDensity, 1, MPI_FLOAT, 0, 18, MPI_COMM_WORLD, &status);
+        MPI_Recv(&pressureMultiplier, 1, MPI_FLOAT, 0, 19, MPI_COMM_WORLD, &status);
+        MPI_Recv(&nearPressureMultiplier, 1, MPI_FLOAT, 0, 20, MPI_COMM_WORLD, &status);
+        MPI_Recv(&SpikyPow2DerivativeScalingFactor, 1, MPI_FLOAT, 0, 21, MPI_COMM_WORLD, &status);
+        MPI_Recv(&spikyPow3DerivativeScalingFactor, 1, MPI_FLOAT, 0, 22, MPI_COMM_WORLD, &status);
+
+        for (int i = 0; i < batchSize; i++)
+        {
+            CalculatePressureForce(
+                i,numParticles,Densities,PredictedPositions,smoothingRadius,SpatialOffsets,
+                SpatialIndices,Velocities,deltaTime,
+                targetDensity,pressureMultiplier,nearPressureMultiplier,
+                SpikyPow2DerivativeScalingFactor, spikyPow3DerivativeScalingFactor
+            );
+        }
+
+        MPI_Send(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 23, MPI_COMM_WORLD);
     }
 }
 
@@ -206,6 +230,107 @@ float MpiWorker::NearDensityKernel(float dst, float radius, float SpikyPow3Scali
     {
         float v = radius - dst;
         return v * v * v * SpikyPow3ScalingFactor;
+    }
+    return 0;
+}
+
+void MpiWorker::CalculatePressureForce(int id, ImU32 numParticles, std::vector<Float2>& Densities,
+    std::vector<Float2>& PredictedPositions,
+    float smoothingRadius,
+    std::vector<ImU32>& SpatialOffsets,
+    std::vector<SpatialEntry>& SpatialIndices,
+    std::vector<Float2>& Velocities,
+    float deltaTime,
+    float targetDensity, float pressureMultiplier, float nearPressureMultiplier,
+    float SpikyPow2DerivativeScalingFactor, float SpikyPow3DerivativeScalingFactor
+    )
+{
+    if (id >= numParticles) return;
+
+    float density = Densities[id][0];
+    float densityNear = Densities[id][1];
+    float pressure = PressureFromDensity(density, targetDensity, pressureMultiplier);
+    float nearPressure = NearPressureFromDensity(densityNear, nearPressureMultiplier);
+    Float2 pressureForce = 0;
+
+    Float2 pos = PredictedPositions[id];
+    Int2 originCell = Physics::GetCell2D(pos, smoothingRadius);
+    float sqrRadius = smoothingRadius * smoothingRadius;
+
+    // Neighbour search
+    for (int i = 0; i < 9; i++)
+    {
+        ImU32 hash = Physics::HashCell2D(originCell + Physics::offsets2D[i]);
+        ImU32 key = Physics::KeyFromHash(hash, numParticles);
+        ImU32 currIndex = SpatialOffsets[key];
+
+        while (currIndex < numParticles)
+        {
+            SpatialEntry indexData = SpatialIndices[currIndex];
+            currIndex++;
+            // Exit if no longer looking at correct bin
+            if (indexData.key != key) break;
+            // Skip if hash does not match
+            if (indexData.hash != hash) continue;
+
+            ImU32 neighbourIndex = indexData.index;
+            // Skip if looking at self
+            if (neighbourIndex == id) continue;
+
+            Float2 neighbourPos = PredictedPositions[neighbourIndex];
+            Float2 offsetToNeighbour = neighbourPos - pos;
+            float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
+
+            // Skip if not within radius
+            if (sqrDstToNeighbour > sqrRadius) continue;
+
+            // Calculate pressure force
+            float dst = sqrt(sqrDstToNeighbour);
+            Float2 dirToNeighbour = dst > 0 ? offsetToNeighbour / dst : Float2(0, 1);
+
+            float neighbourDensity = Densities[neighbourIndex][0];
+            float neighbourNearDensity = Densities[neighbourIndex][1];
+            float neighbourPressure = PressureFromDensity(neighbourDensity, targetDensity, pressureMultiplier);
+            float neighbourNearPressure = NearPressureFromDensity(neighbourNearDensity, nearPressureMultiplier);
+
+            float sharedPressure = (pressure + neighbourPressure) * 0.5;
+            float sharedNearPressure = (nearPressure + neighbourNearPressure) * 0.5;
+
+            pressureForce += dirToNeighbour * DensityDerivative(dst, smoothingRadius, SpikyPow2DerivativeScalingFactor) * sharedPressure / neighbourDensity;
+            pressureForce += dirToNeighbour * NearDensityDerivative(dst, smoothingRadius, SpikyPow3DerivativeScalingFactor) * sharedNearPressure / neighbourNearDensity;
+        }
+    }
+
+    Float2 acceleration = pressureForce / density;
+    Velocities[id] -= acceleration * deltaTime;
+}
+
+float MpiWorker::PressureFromDensity(float density, float targetDensity, float pressureMultiplier)
+{
+    return (density - targetDensity) * pressureMultiplier;
+}
+
+float MpiWorker::NearPressureFromDensity(float nearDensity, float nearPressureMultiplier)
+{
+    return nearPressureMultiplier * nearDensity;
+}
+
+float MpiWorker::DensityDerivative(float dst, float radius, float SpikyPow2DerivativeScalingFactor)
+{
+    if (dst <= radius)
+    {
+        float v = radius - dst;
+        return -v * SpikyPow2DerivativeScalingFactor;
+    }
+    return 0;
+}
+
+float MpiWorker::NearDensityDerivative(float dst, float radius, float SpikyPow3DerivativeScalingFactor)
+{
+    if (dst <= radius)
+    {
+        float v = radius - dst;
+        return -v * v * SpikyPow3DerivativeScalingFactor;
     }
     return 0;
 }

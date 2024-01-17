@@ -184,15 +184,12 @@ struct Simulation
         physics.GpuSortAndCalculateOffsets();
 
         CalculateDensityMPI();
+
+        CalculatePressureForceMPI();
         //for (int i = 0; i < physics.numParticles; i++)
         //{
-        //    physics.CalculateDensity(i);
+        //    physics.CalculatePressureForce(i);
         //}
-
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.CalculatePressureForce(i);
-        }
 
         for (int i = 0; i < physics.numParticles; i++)
         {
@@ -261,6 +258,33 @@ struct Simulation
             int actualChunkSize = end - start;
 
             MPI_Recv(physics.Densities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 17, MPI_COMM_WORLD, &status);
+        }
+    }
+
+    void CalculatePressureForceMPI()
+    {
+        int chunk_size = physics.numParticles / mpiWorkersCount;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Ssend(&physics.targetDensity, 1, MPI_FLOAT, i + 1, 18, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.pressureMultiplier, 1, MPI_FLOAT, i + 1, 19, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.nearPressureMultiplier, 1, MPI_FLOAT, i + 1, 20, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.SpikyPow2DerivativeScalingFactor, 1, MPI_FLOAT, i + 1, 21, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.SpikyPow3DerivativeScalingFactor, 1, MPI_FLOAT, i + 1, 22, MPI_COMM_WORLD);
+        }
+
+        MPI_Status status;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Recv(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 23, MPI_COMM_WORLD, &status);
         }
     }
 #endif

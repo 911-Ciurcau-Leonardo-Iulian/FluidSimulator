@@ -48,4 +48,20 @@ public:
 
     float DensityKernel(float dst, float radius, float SpikyPow2ScalingFactor);
     float NearDensityKernel(float dst, float radius, float SpikyPow3ScalingFactor);
+
+    void CalculatePressureForce(int id, ImU32 numParticles, std::vector<Float2>& Densities,
+        std::vector<Float2>& PredictedPositions,
+        float smoothingRadius,
+        std::vector<ImU32>& SpatialOffsets,
+        std::vector<SpatialEntry>& SpatialIndices,
+        std::vector<Float2>& Velocities,
+        float deltaTime,
+        float targetDensity, float pressureMultiplier, float nearPressureMultiplier,
+        float SpikyPow2DerivativeScalingFactor, float SpikyPow3DerivativeScalingFactor
+    );
+
+    float PressureFromDensity(float density, float targetDensity, float pressureMultiplier);
+    float NearPressureFromDensity(float nearDensity, float nearPressureMultiplier);
+    float DensityDerivative(float dst, float radius, float SpikyPow2DerivativeScalingFactor);
+    float NearDensityDerivative(float dst, float radius, float SpikyPow3DerivativeScalingFactor);
 };
