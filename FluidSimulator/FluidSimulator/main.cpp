@@ -53,10 +53,9 @@ int main(int, char**)
     if (me > 0)
     {
         MpiWorker worker(me);
-        std::cout << "worker" << " " << me << " started\n";
         worker.run();
         MPI_Finalize();
-        return 0;
+        return 0; 
     }
 #endif
 

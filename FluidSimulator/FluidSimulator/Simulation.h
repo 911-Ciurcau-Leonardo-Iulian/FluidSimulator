@@ -174,6 +174,7 @@ struct Simulation
 #else
     void RunSimulationStepMPI()
     {
+        ExternalForcesMPI();
         for (int i = 0; i < physics.numParticles; i++)
         {
             physics.ExternalForces(i);
@@ -204,6 +205,21 @@ struct Simulation
         for (int i = 0; i < physics.numParticles; i++)
         {
             physics.UpdatePositions(i);
+        }
+    }
+
+    void ExternalForcesMPI()
+    {
+        int chunk_size = physics.numParticles / mpiWorkersCount;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Ssend(&actualChunkSize, 1, MPI_INT, i + 1, 1, MPI_COMM_WORLD);
+
+            MPI_Ssend(&physics.numParticles, 1, MPI_INT, i + 1, 2, MPI_COMM_WORLD);
         }
     }
 #endif
