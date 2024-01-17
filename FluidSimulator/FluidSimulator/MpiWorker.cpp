@@ -8,7 +8,8 @@ void MpiWorker::run()
     float deltaTime, gravity, currentInteractionInputStrength, interactionInputRadius,
         smoothingRadius, SpikyPow2ScalingFactor, SpikyPow3ScalingFactor,
         targetDensity, pressureMultiplier, nearPressureMultiplier,
-        SpikyPow2DerivativeScalingFactor, spikyPow3DerivativeScalingFactor;
+        SpikyPow2DerivativeScalingFactor, spikyPow3DerivativeScalingFactor,
+        Poly6ScalingFactor, viscosityStrength;
     Float2 interactionInputPoint;
     std::vector<ImU32> SpatialOffsets;
     ImU32 numParticles;
@@ -99,6 +100,22 @@ void MpiWorker::run()
         }
 
         MPI_Send(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 23, MPI_COMM_WORLD);
+
+
+        // CalculateViscosity
+
+        MPI_Recv(&Poly6ScalingFactor, 1, MPI_FLOAT, 0, 24, MPI_COMM_WORLD, &status);
+        MPI_Recv(&viscosityStrength, 1, MPI_FLOAT, 0, 25, MPI_COMM_WORLD, &status);
+
+        for (int i = 0; i < batchSize; i++)
+        {
+            CalculateViscosity(i, numParticles, PredictedPositions, smoothingRadius, Velocities,
+                SpatialOffsets, SpatialIndices, Poly6ScalingFactor,
+                viscosityStrength,
+                deltaTime);
+        }
+
+        MPI_Send(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 26, MPI_COMM_WORLD);
     }
 }
 
@@ -331,6 +348,72 @@ float MpiWorker::NearDensityDerivative(float dst, float radius, float SpikyPow3D
     {
         float v = radius - dst;
         return -v * v * SpikyPow3DerivativeScalingFactor;
+    }
+    return 0;
+}
+
+void MpiWorker::CalculateViscosity(
+    int id,
+    int numParticles,
+    std::vector<Float2>& PredictedPositions,
+    float smoothingRadius, std::vector<Float2>& Velocities, std::vector<ImU32>& SpatialOffsets,
+    std::vector<SpatialEntry>& SpatialIndices,
+    float Poly6ScalingFactor,
+    float viscosityStrength,
+    float deltaTime
+    )
+{
+    if (id >= numParticles) return;
+
+
+    Float2 pos = PredictedPositions[id];
+    Int2 originCell = Physics::GetCell2D(pos, smoothingRadius);
+    float sqrRadius = smoothingRadius * smoothingRadius;
+
+    Float2 viscosityForce = 0;
+    Float2 velocity = Velocities[id];
+
+    for (int i = 0; i < 9; i++)
+    {
+        ImU32 hash = Physics::HashCell2D(originCell + Physics::offsets2D[i]);
+        ImU32 key = Physics::KeyFromHash(hash, numParticles);
+        ImU32 currIndex = SpatialOffsets[key];
+
+        while (currIndex < numParticles)
+        {
+            SpatialEntry indexData = SpatialIndices[currIndex];
+            currIndex++;
+            // Exit if no longer looking at correct bin
+            if (indexData.key != key) break;
+            // Skip if hash does not match
+            if (indexData.hash != hash) continue;
+
+            ImU32 neighbourIndex = indexData.index;
+            // Skip if looking at self
+            if (neighbourIndex == id) continue;
+
+            Float2 neighbourPos = PredictedPositions[neighbourIndex];
+            Float2 offsetToNeighbour = neighbourPos - pos;
+            float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
+
+            // Skip if not within radius
+            if (sqrDstToNeighbour > sqrRadius) continue;
+
+            float dst = sqrt(sqrDstToNeighbour);
+            Float2 neighbourVelocity = Velocities[neighbourIndex];
+            viscosityForce += (neighbourVelocity - velocity) * ViscosityKernel(dst, smoothingRadius, Poly6ScalingFactor);
+        }
+
+    }
+    Velocities[id] -= viscosityForce * viscosityStrength * deltaTime;
+}
+
+float MpiWorker::ViscosityKernel(float dst, float radius, float Poly6ScalingFactor)
+{
+    if (dst < radius)
+    {
+        float v = radius * radius - dst * dst;
+        return v * v * v * Poly6ScalingFactor;
     }
     return 0;
 }

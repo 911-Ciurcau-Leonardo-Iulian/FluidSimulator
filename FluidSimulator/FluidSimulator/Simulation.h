@@ -186,15 +186,12 @@ struct Simulation
         CalculateDensityMPI();
 
         CalculatePressureForceMPI();
+
+        CalculateViscosityMPI();
         //for (int i = 0; i < physics.numParticles; i++)
         //{
-        //    physics.CalculatePressureForce(i);
+        //    physics.CalculateViscosity(i);
         //}
-
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.CalculateViscosity(i);
-        }
 
         for (int i = 0; i < physics.numParticles; i++)
         {
@@ -285,6 +282,30 @@ struct Simulation
             int actualChunkSize = end - start;
 
             MPI_Recv(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 23, MPI_COMM_WORLD, &status);
+        }
+    }
+
+    void CalculateViscosityMPI()
+    {
+        int chunk_size = physics.numParticles / mpiWorkersCount;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Ssend(&physics.Poly6ScalingFactor, 1, MPI_FLOAT, i + 1, 24, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.viscosityStrength, 1, MPI_FLOAT, i + 1, 25, MPI_COMM_WORLD);
+        }
+
+        MPI_Status status;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Recv(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 26, MPI_COMM_WORLD, &status);
         }
     }
 #endif

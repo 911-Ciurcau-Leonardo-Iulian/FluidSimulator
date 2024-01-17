@@ -64,4 +64,17 @@ public:
     float NearPressureFromDensity(float nearDensity, float nearPressureMultiplier);
     float DensityDerivative(float dst, float radius, float SpikyPow2DerivativeScalingFactor);
     float NearDensityDerivative(float dst, float radius, float SpikyPow3DerivativeScalingFactor);
+
+    void CalculateViscosity(
+        int id,
+        int numParticles,
+        std::vector<Float2>& PredictedPositions,
+        float smoothingRadius, std::vector<Float2>& Velocities, std::vector<ImU32>& SpatialOffsets,
+        std::vector<SpatialEntry>& SpatialIndices,
+        float Poly6ScalingFactor,
+        float viscosityStrength,
+        float deltaTime
+    );
+
+    float ViscosityKernel(float dst, float radius, float Poly6ScalingFactor);
 };
