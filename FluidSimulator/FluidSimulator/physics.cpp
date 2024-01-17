@@ -70,7 +70,7 @@ void Physics::CalculateOffsets(unsigned int id)
     }
 }
 
-static const Int2 offsets2D[9] =
+const Int2 Physics::offsets2D[9] =
 {
     {-1, 1},
     {0, 1},

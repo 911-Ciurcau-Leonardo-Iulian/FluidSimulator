@@ -3,13 +3,20 @@
 void MpiWorker::run()
 {
     MPI_Status status;
-    int batchSize, numParticles;
-    std::vector<Float2> Velocities, Positions, PredictedPositions;
-    float deltaTime, gravity, currentInteractionInputStrength, interactionInputRadius;
+    int batchSize;
+    std::vector<Float2> Velocities, Positions, PredictedPositions, Densities;
+    float deltaTime, gravity, currentInteractionInputStrength, interactionInputRadius,
+        smoothingRadius, SpikyPow2ScalingFactor, SpikyPow3ScalingFactor;
     Float2 interactionInputPoint;
+    std::vector<ImU32> SpatialOffsets;
+    ImU32 numParticles;
+    std::vector<SpatialEntry> SpatialIndices;
 
     while (true)
     {
+        // ExternalForces
+
+
         MPI_Recv(&batchSize, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, &status);
         Velocities.resize(batchSize);
         MPI_Recv(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 2, MPI_COMM_WORLD, &status);
@@ -36,6 +43,38 @@ void MpiWorker::run()
 
         MPI_Send(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 9, MPI_COMM_WORLD);
         MPI_Send(PredictedPositions.data(), batchSize * 2, MPI_FLOAT, 0, 10, MPI_COMM_WORLD);
+
+        // CalculateDensity
+
+
+        MPI_Recv(&smoothingRadius, 1, MPI_FLOAT, 0, 11, MPI_COMM_WORLD, &status);
+        MPI_Recv(&numParticles, 1, MPI_UINT32_T, 0, 12, MPI_COMM_WORLD, &status);
+        SpatialOffsets.resize(numParticles);
+        MPI_Recv(SpatialOffsets.data(), numParticles, MPI_UINT32_T, 0, 13, MPI_COMM_WORLD, &status);
+        SpatialIndices.resize(numParticles);
+        MPI_Recv(SpatialIndices.data(), numParticles * 3, MPI_UINT32_T, 0, 14, MPI_COMM_WORLD, &status);
+        MPI_Recv(&SpikyPow2ScalingFactor, 1, MPI_FLOAT, 0, 15, MPI_COMM_WORLD, &status);
+        MPI_Recv(&SpikyPow3ScalingFactor, 1, MPI_FLOAT, 0, 16, MPI_COMM_WORLD, &status);
+
+
+        Densities.resize(batchSize);
+
+        for (int i = 0; i < batchSize; i++)
+        {
+            CalculateDensity(
+                i,
+                PredictedPositions,
+                Densities,
+                smoothingRadius,
+                SpatialOffsets,
+                numParticles,
+                SpatialIndices,
+                SpikyPow2ScalingFactor,
+                SpikyPow3ScalingFactor
+            );
+        }
+
+        MPI_Send(Densities.data(), batchSize * 2, MPI_FLOAT, 0, 17, MPI_COMM_WORLD);
     }
 }
 
@@ -54,7 +93,8 @@ void MpiWorker::ExternalForces(
     PredictedPositions[id] = Positions[id] + Velocities[id] * predictionFactor;
 }
 
-Float2 MpiWorker::ExternalForces(Float2& pos, Float2& velocity, float gravity, float currentInteractionInputStrength,
+Float2 MpiWorker::ExternalForces(Float2& pos, Float2& velocity, float gravity,
+    float currentInteractionInputStrength,
     Float2& interactionInputPoint, float interactionInputRadius)
 {
     Float2 gravityAccel = Float2(0, gravity);
@@ -76,4 +116,96 @@ Float2 MpiWorker::ExternalForces(Float2& pos, Float2& velocity, float gravity, f
     }
 
     return gravityAccel;
+}
+
+void MpiWorker::CalculateDensity(int id,
+    std::vector<Float2>& PredictedPositions,
+    std::vector<Float2>& Densities,
+    float smoothingRadius,
+    std::vector<ImU32>& SpatialOffsets,
+    ImU32 numParticles,
+    std::vector<SpatialEntry>& SpatialIndices,
+    float SpikyPow2ScalingFactor,
+    float SpikyPow3ScalingFactor
+)
+{
+    Float2 pos = PredictedPositions[id];
+    Densities[id] = CalculateDensityForPos(
+        pos,
+        smoothingRadius,
+        SpatialOffsets,
+        numParticles,
+        SpatialIndices,
+        PredictedPositions,
+        SpikyPow2ScalingFactor,
+        SpikyPow3ScalingFactor
+    );
+}
+
+Float2 MpiWorker::CalculateDensityForPos(Float2 pos,
+    float smoothingRadius,
+    std::vector<ImU32>& SpatialOffsets,
+    ImU32 numParticles,
+    std::vector<SpatialEntry>& SpatialIndices,
+    std::vector<Float2>& PredictedPositions,
+    float SpikyPow2ScalingFactor,
+    float SpikyPow3ScalingFactor
+)
+{
+    Int2 originCell = Physics::GetCell2D(pos, smoothingRadius);
+    float sqrRadius = smoothingRadius * smoothingRadius;
+    float density = 0;
+    float nearDensity = 0;
+    // Neighbour search
+    for (int i = 0; i < 9; i++)
+    {
+        ImU32 hash = Physics::HashCell2D(originCell + Physics::offsets2D[i]);
+        ImU32 key = Physics::KeyFromHash(hash, numParticles);
+        ImU32 currIndex = SpatialOffsets[key];
+        while (currIndex < numParticles)
+        {
+            SpatialEntry indexData = SpatialIndices[currIndex];
+            currIndex++;
+            // Exit if no longer looking at correct bin
+            if (indexData.key != key) break;
+            // Skip if hash does not match
+            if (indexData.hash != hash) continue;
+
+            ImU32 neighbourIndex = indexData.index;
+            Float2 neighbourPos = PredictedPositions[neighbourIndex];
+            Float2 offsetToNeighbour = neighbourPos - pos;
+            float sqrDstToNeighbour = Dot(offsetToNeighbour, offsetToNeighbour);
+
+            // Skip if not within radius
+            if (sqrDstToNeighbour > sqrRadius) continue;
+
+            // Calculate density and near density
+            float dst = sqrt(sqrDstToNeighbour);
+            density += DensityKernel(dst, smoothingRadius, SpikyPow2ScalingFactor);
+            nearDensity += NearDensityKernel(dst, smoothingRadius, SpikyPow3ScalingFactor);
+
+        }
+    }
+
+    return Float2(density, nearDensity);
+}
+
+float MpiWorker::DensityKernel(float dst, float radius, float SpikyPow2ScalingFactor)
+{
+    if (dst < radius)
+    {
+        float v = radius - dst;
+        return v * v * SpikyPow2ScalingFactor;
+    }
+    return 0;
+}
+
+float MpiWorker::NearDensityKernel(float dst, float radius, float SpikyPow3ScalingFactor)
+{
+    if (dst < radius)
+    {
+        float v = radius - dst;
+        return v * v * v * SpikyPow3ScalingFactor;
+    }
+    return 0;
 }

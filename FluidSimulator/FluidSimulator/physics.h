@@ -1,3 +1,5 @@
+#pragma once
+
 #include "Vec2.h"
 #include <imgui.h>
 #include <vector>
@@ -23,6 +25,7 @@ struct Physics
     unsigned int groupWidth;
     unsigned int groupHeight;
     unsigned int stepIndex;
+    static const Int2 offsets2D[9];
 
     //Simulation params
     ImU32 numParticles;
@@ -62,11 +65,11 @@ struct Physics
 
     void Sort(unsigned int id);
 
-    Int2 GetCell2D(Float2 position, float radius);
+    static Int2 GetCell2D(Float2 position, float radius);
 
-    ImU32 HashCell2D(Int2 cell);
+    static ImU32 HashCell2D(Int2 cell);
 
-    ImU32 KeyFromHash(ImU32 hash, ImU32 tableSize);
+    static ImU32 KeyFromHash(ImU32 hash, ImU32 tableSize);
 
     float SmoothingKernelPoly6(float dst, float radius);
 

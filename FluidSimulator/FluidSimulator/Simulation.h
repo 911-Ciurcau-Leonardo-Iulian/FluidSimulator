@@ -183,10 +183,11 @@ struct Simulation
 
         physics.GpuSortAndCalculateOffsets();
 
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.CalculateDensity(i);
-        }
+        CalculateDensityMPI();
+        //for (int i = 0; i < physics.numParticles; i++)
+        //{
+        //    physics.CalculateDensity(i);
+        //}
 
         for (int i = 0; i < physics.numParticles; i++)
         {
@@ -232,6 +233,34 @@ struct Simulation
 
             MPI_Recv(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 9, MPI_COMM_WORLD, &status);
             MPI_Recv(physics.PredictedPositions.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 10, MPI_COMM_WORLD, &status);
+        }
+    }
+
+    void CalculateDensityMPI()
+    {
+        int chunk_size = physics.numParticles / mpiWorkersCount;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Ssend(&physics.smoothingRadius, 1, MPI_FLOAT, i + 1, 11, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.numParticles, 1, MPI_UINT32_T, i + 1, 12, MPI_COMM_WORLD);
+            MPI_Ssend(physics.SpatialOffsets.data(), physics.numParticles, MPI_UINT32_T, i + 1, 13, MPI_COMM_WORLD);
+            MPI_Ssend(physics.SpatialIndices.data(), physics.numParticles * 3, MPI_UINT32_T, i + 1, 14, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.SpikyPow2ScalingFactor, 1, MPI_FLOAT, i + 1, 15, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.SpikyPow3ScalingFactor, 1, MPI_FLOAT, i + 1, 16, MPI_COMM_WORLD);
+        }
+
+        MPI_Status status;
+        for (int i = 0; i < mpiWorkersCount; i++)
+        {
+            int start = i * chunk_size;
+            int end = (i == mpiWorkersCount - 1) ? physics.numParticles : (i + 1) * chunk_size;
+            int actualChunkSize = end - start;
+
+            MPI_Recv(physics.Densities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 17, MPI_COMM_WORLD, &status);
         }
     }
 #endif
