@@ -218,8 +218,13 @@ struct Simulation
             int actualChunkSize = end - start;
 
             MPI_Ssend(&actualChunkSize, 1, MPI_INT, i + 1, 1, MPI_COMM_WORLD);
-
-            MPI_Ssend(&physics.numParticles, 1, MPI_INT, i + 1, 2, MPI_COMM_WORLD);
+            MPI_Ssend(physics.Velocities.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 2, MPI_COMM_WORLD);
+            MPI_Ssend(physics.Positions.data() + start, actualChunkSize * 2, MPI_FLOAT, i + 1, 3, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.deltaTime, 1, MPI_FLOAT, i + 1, 4, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.gravity, 1, MPI_FLOAT, i + 1, 5, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.currentInteractionInputStrength, 1, MPI_FLOAT, i + 1, 6, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.interactionInputPoint, 2, MPI_FLOAT, i + 1, 7, MPI_COMM_WORLD);
+            MPI_Ssend(&physics.interactionInputRadius, 1, MPI_FLOAT, i + 1, 8, MPI_COMM_WORLD);
         }
     }
 #endif
