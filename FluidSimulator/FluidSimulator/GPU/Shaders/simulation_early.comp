@@ -1,22 +1,26 @@
 #version 430 core
-layout (local_size_x = 1, local_size_y = 1, local_size_z = 1) in;
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
 
 layout(std140, binding = 0) uniform Settings {
-    uint numParticles;
+    uint num_particles;
     float gravity;
-    float deltaTime;
-    float collisionDamping;
-    float smoothingRadius;
-    float targetDensity;
-    float pressureMultiplier;
-    float nearPressureMultiplier;
-    float viscosityStrength;
-    vec2 boundsSize;
-    vec2 interactionInputPoint;
-    float interactionInputStrength;
-    float interactionInputRadius;
-    vec2 obstacleSize;
-    vec2 obstacleCentre;
+    float delta_time;
+    float collision_damping;
+    float smoothing_radius;
+    float target_density;
+    float pressure_multiplier;
+    float near_pressure_multiplier;
+    float viscosity_strength;
+    float poly6_scaling_factor;
+    float spiky_pow3_scaling_factor;
+    float spiky_pow2_scaling_factor;
+    float spiky_pow3_derivative_scaling_factor;
+    float spiky_pow2_derivative_scaling_factor;
+    vec2 interaction_input_point;
+    float interaction_input_strength;
+    float interaction_input_radius;
+    //vec2 obstacle_size;
+    //vec2 obstacle_centre;
 };
 
 layout(std430, binding = 0) buffer _Positions
@@ -53,41 +57,28 @@ layout(std430, binding = 4) writeonly buffer _SpatialIndices
 vec2 CalculateExternalForces(vec2 pos, vec2 velocity)
 {
 	// Gravity
-	vec2 gravityAccel = vec2(0, gravity);
-	
-	// Input interactions modify gravity
-	if (interactionInputStrength != 0) {
-		vec2 inputPointOffset = interactionInputPoint - pos;
-		float sqrDst = dot(inputPointOffset, inputPointOffset);
-		if (sqrDst < interactionInputRadius * interactionInputRadius)
-		{
-			float dst = sqrt(sqrDst);
-			float edgeT = (dst / interactionInputRadius);
-			float centreT = 1 - edgeT;
-			vec2 dirToCentre = inputPointOffset / dst;
+    vec2 gravity_accel = vec2(0, gravity);
 
-			float gravityWeight = 1 - (centreT * clamp(interactionInputStrength / 10, 0.0, 1.0));
-			vec2 accel = gravityAccel * gravityWeight + dirToCentre * centreT * interactionInputStrength;
-			accel -= velocity * centreT;
-			return accel;
-		}
-	}
+    // Input interactions modify gravity
+    if (interaction_input_strength != 0) {
+        vec2 input_point_offset = interaction_input_point - pos;
+        float sqr_dst = dot(input_point_offset, input_point_offset);
+        if (sqr_dst < interaction_input_radius * interaction_input_radius)
+        {
+            float dst = sqrt(sqr_dst);
+            float edge_t = (dst / interaction_input_radius);
+            float centre_t = 1 - edge_t;
+            vec2 dir_to_centre = input_point_offset / dst;
 
-	return gravityAccel;
+            float gravity_weight = 1 - (centre_t * clamp(interaction_input_strength / 10, 0.0, 1.0));
+            vec2 accel = gravity_accel * gravity_weight + dir_to_centre * centre_t * interaction_input_strength;
+            accel -= velocity * centre_t;
+            return accel;
+        }
+    }
+
+    return gravity_accel;
 }
-
-const ivec2 offsets2D[9] =
-{
-	ivec2(-1, 1),
-	ivec2(0, 1),
-	ivec2(1, 1),
-	ivec2(-1, 0),
-	ivec2(0, 0),
-	ivec2(1, 0),
-	ivec2(-1, -1),
-	ivec2(0, -1),
-	ivec2(1, -1),
-};
 
 // Constants used for hashing
 const uint hashK1 = 15823;
@@ -113,27 +104,31 @@ uint KeyFromHash(uint hash, uint tableSize)
 	return hash % tableSize;
 }
 
-void main()
-{
-    uvec3 id = gl_GlobalInvocationID;
-	if (id.x >= numParticles)
-        return;
-    
-
-	// External forces (gravity and input interaction)
-	Velocities[id.x] += CalculateExternalForces(Positions[id.x], Velocities[id.x]) * deltaTime;
+vec2 CalculateExternalForcesID(uint id) {
+    Velocities[id] -= CalculateExternalForces(Positions[id], Velocities[id]) * delta_time;
 
 	// Predict
 	const float predictionFactor = 1 / 120.0;
-    const vec2 predictedPosition = Positions[id.x] + Velocities[id.x] * predictionFactor;
-	PredictedPositions[id.x] = predictedPosition;
+    const vec2 predictedPosition = Positions[id] + Velocities[id] * predictionFactor;
+	PredictedPositions[id] = predictedPosition;
+
+    return predictedPosition;
+}
+
+void main()
+{
+    uvec3 id = gl_GlobalInvocationID;
+	if (id.x >= num_particles)
+        return;
+    
+	vec2 predicted_position = CalculateExternalForcesID(id.x);
 
     // Reset offsets
-	SpatialOffsets[id.x] = numParticles;
+	SpatialOffsets[id.x] = num_particles;
 	// Update index buffer
 	uint index = id.x;
-	ivec2 cell = GetCell2D(predictedPosition, smoothingRadius);
+	ivec2 cell = GetCell2D(predicted_position, smoothing_radius);
 	uint hash = HashCell2D(cell);
-	uint key = KeyFromHash(hash, numParticles);
+	uint key = KeyFromHash(hash, num_particles);
 	SpatialIndices[id.x] = SpatialIndex(index, hash, key);
 }

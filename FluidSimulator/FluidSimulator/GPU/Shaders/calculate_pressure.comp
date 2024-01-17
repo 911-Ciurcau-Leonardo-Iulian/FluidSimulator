@@ -1,0 +1,250 @@
+#version 430 core
+layout (local_size_x = 128, local_size_y = 1, local_size_z = 1) in;
+
+layout(std140, binding = 0) uniform Settings {
+    uint num_particles;
+    float gravity;
+    float delta_time;
+    float collision_damping;
+    float smoothing_radius;
+    float target_density;
+    float pressure_multiplier;
+    float near_pressure_multiplier;
+    float viscosity_strength;
+    float poly6_scaling_factor;
+    float spiky_pow3_scaling_factor;
+    float spiky_pow2_scaling_factor;
+    float spiky_pow3_derivative_scaling_factor;
+    float spiky_pow2_derivative_scaling_factor;
+    vec2 interaction_input_point;
+    float interaction_input_strength;
+    float interaction_input_radius;
+    //vec2 obstacle_size;
+    //vec2 obstacle_centre;
+};
+
+// Constants used for hashing
+const uint hashK1 = 15823;
+const uint hashK2 = 9737333;
+
+// Convert floating point position into an integer cell coordinate
+ivec2 GetCell2D(vec2 position, float radius)
+{
+	return ivec2(floor(position / radius));
+}
+
+// Hash cell coordinate to a single unsigned integer
+uint HashCell2D(ivec2 cell)
+{
+	uvec2 unsigned_cell = uvec2(cell);
+	uint a = unsigned_cell.x * hashK1;
+	uint b = unsigned_cell.y * hashK2;
+	return (a + b);
+}
+
+uint KeyFromHash(uint hash, uint tableSize)
+{
+	return hash % tableSize;
+}
+
+const ivec2 offsets2D[9] =
+{
+	ivec2(-1, 1),
+	ivec2(0, 1),
+	ivec2(1, 1),
+	ivec2(-1, 0),
+	ivec2(0, 0),
+	ivec2(1, 0),
+	ivec2(-1, -1),
+	ivec2(0, -1),
+	ivec2(1, -1),
+};
+
+layout(std430, binding = 0) readonly buffer _Densities
+{
+    vec2 Densities[];
+};
+
+layout(std430, binding = 1) readonly buffer _PredictedPositions
+{
+    vec2 PredictedPositions[];
+};
+
+layout(std430, binding = 2) readonly buffer _SpatialOffsets
+{
+    uint SpatialOffsets[];
+};
+
+struct SpatialIndex {
+    uint index;
+    uint hash;
+    uint key;
+};
+
+layout(std430, binding = 3) readonly buffer _SpatialIndices
+{
+    SpatialIndex SpatialIndices[];
+};
+
+layout(std430, binding = 4) buffer _Velocities {
+    vec2 Velocities[];
+};
+
+float SmoothingKernelPoly6(float dst, float radius)
+{
+	if (dst < radius)
+	{
+		float v = radius * radius - dst * dst;
+		return v * v * v * poly6_scaling_factor;
+	}
+	return 0;
+}
+
+float SpikyKernelPow3(float dst, float radius)
+{
+	if (dst < radius)
+	{
+		float v = radius - dst;
+		return v * v * v * spiky_pow3_scaling_factor;
+	}
+	return 0;
+}
+
+float SpikyKernelPow2(float dst, float radius)
+{
+	if (dst < radius)
+	{
+		float v = radius - dst;
+		return v * v * spiky_pow2_scaling_factor;
+	}
+	return 0;
+}
+
+float DerivativeSpikyPow3(float dst, float radius)
+{
+	if (dst <= radius)
+	{
+		float v = radius - dst;
+		return -v * v * spiky_pow3_derivative_scaling_factor;
+	}
+	return 0;
+}
+
+float DerivativeSpikyPow2(float dst, float radius)
+{
+	if (dst <= radius)
+	{
+		float v = radius - dst;
+		return -v * spiky_pow2_derivative_scaling_factor;
+	}
+	return 0;
+}
+
+float DensityKernel(float dst, float radius)
+{
+	return SpikyKernelPow2(dst, radius);
+}
+
+float NearDensityKernel(float dst, float radius)
+{
+	return SpikyKernelPow3(dst, radius);
+}
+
+float DensityDerivative(float dst, float radius)
+{
+	return DerivativeSpikyPow2(dst, radius);
+}
+
+float NearDensityDerivative(float dst, float radius)
+{
+	return DerivativeSpikyPow3(dst, radius);
+}
+
+float PressureFromDensity(float density)
+{
+	return (density - target_density) * pressure_multiplier;
+}
+
+float NearPressureFromDensity(float near_density)
+{
+	return near_pressure_multiplier * near_density;
+}
+
+vec2 CalculatePressureForce(float dst, vec2 offset_to_neighbour, uint neighbour_index, float pressure, float near_pressure) {
+    vec2 dir_to_neighbour = (dst > 0) ? offset_to_neighbour / dst : vec2(0, 1);
+
+    float neighbour_density = Densities[neighbour_index][0];
+    float neighbour_near_density = Densities[neighbour_index][1];
+    float neighbour_pressure = PressureFromDensity(neighbour_density);
+    float neighbour_near_pressure = NearPressureFromDensity(neighbour_near_density);
+
+    float shared_pressure = (pressure + neighbour_pressure) * 0.5;
+    float shared_near_pressure = (near_pressure + neighbour_near_pressure) * 0.5;
+
+    vec2 pressure_force = vec2(0);
+    pressure_force += dir_to_neighbour * DensityDerivative(dst, smoothing_radius) * shared_pressure / neighbour_density;
+    pressure_force += dir_to_neighbour * NearDensityDerivative(dst, smoothing_radius) * shared_near_pressure / neighbour_near_density;
+    return pressure_force;
+}
+
+void main()
+{
+    uvec3 id = gl_GlobalInvocationID;
+    if (id.x >= num_particles) return;
+
+	float density = Densities[id.x][0];
+    float density_near = Densities[id.x][1];
+    float pressure = PressureFromDensity(density);
+    float near_pressure = NearPressureFromDensity(density_near);
+    vec2 pressure_force = vec2(0);
+
+    vec2 pos = PredictedPositions[id.x];
+    ivec2 origin_cell = GetCell2D(pos, smoothing_radius);
+    float sqr_radius = smoothing_radius * smoothing_radius;
+
+    // Neighbour search
+    for (int i = 0; i < 9; i++)
+    {
+        uint hash = HashCell2D(origin_cell + offsets2D[i]);
+        uint key = KeyFromHash(hash, num_particles);
+        uint curr_index = SpatialOffsets[key];
+
+        while (curr_index < num_particles)
+        {
+            SpatialIndex index_data = SpatialIndices[curr_index];
+            curr_index++;
+            // Exit if no longer looking at the correct bin
+            if (index_data.key != key) break;
+            // Skip if hash does not match
+            if (index_data.hash != hash) continue;
+
+            uint neighbour_index = index_data.index;
+            // Skip if looking at self
+            if (neighbour_index == id.x) continue;
+
+            vec2 neighbour_pos = PredictedPositions[neighbour_index];
+            vec2 offset_to_neighbour = neighbour_pos - pos;
+            float sqr_dst_to_neighbour = dot(offset_to_neighbour, offset_to_neighbour);
+
+            // Skip if not within radius
+            if (sqr_dst_to_neighbour > sqr_radius) continue;
+
+            // Calculate pressure force
+            float dst = sqrt(sqr_dst_to_neighbour);
+            vec2 dir_to_neighbour = (dst > 0) ? offset_to_neighbour / dst : vec2(0, 1);
+
+            float neighbour_density = Densities[neighbour_index][0];
+            float neighbour_near_density = Densities[neighbour_index][1];
+            float neighbour_pressure = PressureFromDensity(neighbour_density);
+            float neighbour_near_pressure = NearPressureFromDensity(neighbour_near_density);
+
+            float shared_pressure = (pressure + neighbour_pressure) * 0.5;
+            float shared_near_pressure = (near_pressure + neighbour_near_pressure) * 0.5;
+
+            pressure_force += CalculatePressureForce(dst, offset_to_neighbour, neighbour_index, pressure, near_pressure);
+        }
+    }
+
+    vec2 acceleration = pressure_force / density;
+    Velocities[id.x] -= acceleration * delta_time;
+}

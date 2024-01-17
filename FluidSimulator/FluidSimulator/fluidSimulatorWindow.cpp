@@ -1,33 +1,31 @@
 #include "fluidSimulatorWindow.h"
 #include <time.h>
+#include "GPU\glad.h"
+#include <GLFW\glfw3.h>
+#include <iostream>
 
 FluidSimulatorWindow::FluidSimulatorWindow()
 {
     srand(time(NULL));
-
-    
+    if (!gladLoadGL()) {
+        std::cout << "Glad initialization failed";
+        abort();
+    }
+    simulation.Initialize();
 }
 
-void FluidSimulatorWindow::draw(ImGuiIO& io)
+void FluidSimulatorWindow::Draw(bool is_left_mouse_pressed, bool is_right_mouse_pressed, ImGuiIO& io)
 {
-    ImGui::Begin("Fluid Simulator Main Window", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoTitleBar); 
+    Float2 mouse_pos = { ImGui::GetMousePos().x , ImGui::GetMousePos().y };
+    Float2 normalized_mouse_pos = { mouse_pos.x / width * 2.0f - 1.0f, mouse_pos.y / height * 2.0f - 1.0f };
+    simulation.DoFrame(normalized_mouse_pos, is_left_mouse_pressed, is_right_mouse_pressed, io.DeltaTime);
+    simulation.RenderParticles();
+}
 
-    ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
-
-    ImVec2 rectPos(50, ImGui::GetFontSize() * 10);
-    ImVec2 rectSize(ImGui::GetWindowWidth() - rectPos.x * 2, ImGui::GetWindowHeight() - rectPos.y - ImGui::GetFontSize());
-    ImU32 rectColor = IM_COL32(155, 155, 155, 255);
-
-    ImGui::GetWindowDrawList()->AddRect(rectPos, ImVec2(rectPos.x + rectSize.x, rectPos.y + rectSize.y), rectColor);
-
-    ImGuiStyle& style = ImGui::GetStyle();
-    ImU32 bgColor = ImGui::GetColorU32(style.Colors[ImGuiCol_WindowBg]);
-    ImGui::GetWindowDrawList()->AddLine(rectPos, {rectPos.x + rectSize.x, rectPos.y}, bgColor);
-
-    for (auto& particle : FluidSimulatorWindow::particles) 
-    {
-        particle.draw();
-    }
-
-    ImGui::End();
+void FluidSimulatorWindow::SetWindowDimensions(size_t _width, size_t _height)
+{
+    width = _width;
+    height = _height;
+    float aspect_ratio = (float)width / (float)height;
+    simulation.SetAspectRatio(aspect_ratio);
 }

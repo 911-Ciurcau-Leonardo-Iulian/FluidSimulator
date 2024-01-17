@@ -13,6 +13,8 @@ public:
 
     void SetFloat(const char* name, float value) const;
 
+    void SetTexture(const char* name, unsigned int slot) const;
+
 private:
     unsigned int ID;
 };

@@ -94,3 +94,8 @@ void Shader::SetFloat(const char* name, float value) const
 {
     glUniform1f(glGetUniformLocation(ID, name), value);
 }
+
+void Shader::SetTexture(const char* name, unsigned int slot) const
+{
+    glUniform1i(glGetUniformLocation(ID, name), slot);
+}

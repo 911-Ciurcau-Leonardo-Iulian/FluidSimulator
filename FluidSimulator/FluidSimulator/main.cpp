@@ -67,12 +67,12 @@ int main(int, char**)
 #endif
 
     // Create window with graphics context
-    GLFWwindow* window = glfwCreateWindow(1280, 720, "Fluid Simulator", nullptr, nullptr);
+    GLFWwindow* window = glfwCreateWindow(2560, 1200, "Fluid Simulator", nullptr, nullptr);
     if (window == nullptr)
         return 1;
     glfwMakeContextCurrent(window);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-    glfwSwapInterval(1); // Enable vsync
+    glfwSwapInterval(0); // Enable vsync
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();
@@ -89,6 +89,7 @@ int main(int, char**)
     ImGui_ImplGlfw_InstallEmscriptenCanvasResizeCallback("#canvas");
 #endif
     ImGui_ImplOpenGL3_Init(glsl_version);
+
 
     // Load Fonts
     // - If no fonts are loaded, dear imgui will use the default font. You can also load multiple fonts and use ImGui::PushFont()/PopFont() to select them.
@@ -110,7 +111,7 @@ int main(int, char**)
     // Our state
     bool show_demo_window = true;
     bool show_another_window = false;
-    ImVec4 clear_color = ImVec4(0.45f, 0.55f, 0.60f, 1.00f);
+    ImVec4 clear_color = ImVec4(0.2f, 0.2f, 0.2f, 1.00f);
     FluidSimulatorWindow fluidSimulatorWindow;
 
     // Main loop
@@ -135,7 +136,7 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
-        {
+        /*{
             static float f = 0.0f;
             static int counter = 0;
 
@@ -144,17 +145,46 @@ int main(int, char**)
             ImGui::SetNextWindowSizeConstraints(ImVec2(static_cast<float>(width), static_cast<float>(height)), ImVec2(static_cast<float>(width), static_cast<float>(height)));
             ImGui::SetNextWindowPos(ImVec2(0, 0));
 
-            fluidSimulatorWindow.draw(io);
+        }*/
+
+        ImGui::Begin("Fluid Simulator Main Window", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoCollapse
+            | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoBackground);
+        ImGui::Text("Application average %.3f ms/frame (%.1f FPS)", 1000.0f / io.Framerate, io.Framerate);
+        GeneralSettings* general_settings = fluidSimulatorWindow.simulation.GetGeneralSettings();
+        ImGui::SliderFloat("Interaction Input Radius", &general_settings->interaction_input_radius, 0.0f, 2000.0f);
+        ImGui::SliderFloat("Interaction Input Strength", fluidSimulatorWindow.simulation.GetMouseClickStrength(), 0.0f, 100000.0f);
+        ImGui::SliderFloat("Gravity", &general_settings->gravity, -1000.0f, 1000.0f);
+        ImGui::SliderFloat("Collision Damping", &general_settings->collision_damping, 0.0f, 1.0f);
+        ImGui::SliderFloat("Smoothing Radius", &general_settings->smoothing_radius, 0.005f, 1000.0f);
+        ImGui::SliderFloat("Target Density", &general_settings->target_density, 0.005f, 1000.0f);
+        ImGui::SliderFloat("Pressure Multiplier", &general_settings->pressure_multiplier, 0.0f, 1000.0f);
+        ImGui::SliderFloat("Near Pressure Multiplier", &general_settings->near_pressure_multiplier, 0.0f, 1000.0f);
+        ImGui::SliderFloat("Viscosity Strength", &general_settings->viscosity_strength, 0.0f, 1000.0f);
+        if (ImGui::Button("Restart")) {
+            fluidSimulatorWindow.simulation.Reset();
+        }
+        if (ImGui::Button("Set Default")) {
+            fluidSimulatorWindow.simulation.SetInitialSettingsData();
         }
 
-        // Rendering
-        ImGui::Render();
+        ImGui::GetWindowDrawList()->AddCircle(ImGui::GetMousePos(), general_settings->interaction_input_radius / 4000.0f * 2500.f / 2.0f, IM_COL32(255, 30, 30, 255));
+
+        ImGui::End();
+
         int display_w, display_h;
         glfwGetFramebufferSize(window, &display_w, &display_h);
+
+        // Rendering
+        ImGui::Render();       
         glViewport(0, 0, display_w, display_h);
         glClearColor(clear_color.x * clear_color.w, clear_color.y * clear_color.w, clear_color.z * clear_color.w, clear_color.w);
         glClear(GL_COLOR_BUFFER_BIT);
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
+
+        bool is_left_mouse_pressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_LEFT) == GLFW_PRESS;
+        bool is_right_mouse_pressed = glfwGetMouseButton(window, GLFW_MOUSE_BUTTON_RIGHT) == GLFW_PRESS;
+        fluidSimulatorWindow.SetWindowDimensions(display_w, display_h);
+        fluidSimulatorWindow.Draw(is_left_mouse_pressed, is_right_mouse_pressed, io);
 
         glfwSwapBuffers(window);
     }

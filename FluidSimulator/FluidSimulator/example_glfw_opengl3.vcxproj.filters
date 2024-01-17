@@ -40,9 +40,6 @@
     <ClCompile Include="particle.cpp">
       <Filter>sources</Filter>
     </ClCompile>
-    <ClCompile Include="physics.cpp">
-      <Filter>sources</Filter>
-    </ClCompile>
     <ClCompile Include="GPU\ComputeShader.cpp">
       <Filter>sources</Filter>
     </ClCompile>
@@ -62,6 +59,15 @@
       <Filter>sources</Filter>
     </ClCompile>
     <ClCompile Include="GPU\VertexBuffer.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\Texture.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\DataType.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="GPU\GPUSort.cpp">
       <Filter>sources</Filter>
     </ClCompile>
   </ItemGroup>
@@ -86,7 +92,6 @@
     </ClInclude>
     <ClInclude Include="fluidSimulatorWindow.h" />
     <ClInclude Include="particle.h" />
-    <ClInclude Include="physics.h" />
     <ClInclude Include="Vec2.h" />
     <ClInclude Include="GPU\ComputeShader.h" />
     <ClInclude Include="GPU\glad.h" />
@@ -97,6 +102,11 @@
     <ClInclude Include="GPU\Simulation.h" />
     <ClInclude Include="GPU\Shader.h" />
     <ClInclude Include="GPU\VertexBuffer.h" />
+    <ClInclude Include="GPU\Texture.h" />
+    <ClInclude Include="GPU\DataType.h" />
+    <ClInclude Include="GPU\GPUSort.h" />
+    <ClInclude Include="GPU\ShaderLocation.h" />
+    <ClInclude Include="Vec4.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
@@ -107,10 +117,12 @@
       <Filter>imgui</Filter>
     </None>
     <None Include="GPU\Shaders\simulation_early.comp" />
-    <None Include="GPU\Shaders\simulation_late.comp" />
     <None Include="GPU\Shaders\sort.comp" />
     <None Include="GPU\Shaders\sort_calculate_offsets.comp" />
     <None Include="GPU\Shaders\sprite.vert" />
     <None Include="GPU\Shaders\sprite.frag" />
+    <None Include="GPU\Shaders\calculate_density.comp" />
+    <None Include="GPU\Shaders\calculate_pressure.comp" />
+    <None Include="GPU\Shaders\calculate_viscosity_update_pos.comp" />
   </ItemGroup>
 </Project>

@@ -7,8 +7,12 @@ class FluidSimulatorWindow {
 public:
     FluidSimulatorWindow();
 
-    void draw(ImGuiIO& io);
+    void Draw(bool is_left_mouse_pressed, bool is_right_mouse_pressed, ImGuiIO& io);
 
-private:
-    Simulation simulation{ 10 };
+    void SetWindowDimensions(size_t width, size_t height);
+
+//private:
+    Simulation simulation;
+    size_t width;
+    size_t height;
 };
