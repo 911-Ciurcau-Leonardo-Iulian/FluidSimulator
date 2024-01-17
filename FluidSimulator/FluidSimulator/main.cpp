@@ -55,6 +55,7 @@ int main(int, char**)
         MpiWorker worker(me);
         std::cout << "worker" << " " << me << " started\n";
         worker.run();
+        MPI_Finalize();
         return 0;
     }
 #endif

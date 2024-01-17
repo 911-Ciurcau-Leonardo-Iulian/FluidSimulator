@@ -52,6 +52,12 @@
     <ClCompile Include="ParticleSpawner.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="MpiWorker.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
+    <ClCompile Include="ThreadPool.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -78,6 +84,8 @@
     <ClInclude Include="Vec2.h" />
     <ClInclude Include="Simulation.h" />
     <ClInclude Include="ParticleSpawner.h" />
+    <ClInclude Include="MpiWorker.h" />
+    <ClInclude Include="ThreadPool.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />
