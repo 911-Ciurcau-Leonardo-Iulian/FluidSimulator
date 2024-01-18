@@ -162,8 +162,8 @@ void Simulation::SetInitialSettingsData()
     settings->near_pressure_multiplier = 1.75f * FACTOR;
     settings->pressure_multiplier = 22.5f * FACTOR;
     settings->num_particles = particle_count;
-    settings->smoothing_radius = 7.5f * FACTOR;
-    settings->target_density = 150.0f * FACTOR;
+    settings->smoothing_radius = 8.5f * FACTOR;
+    settings->target_density = 113.0f * FACTOR;
     settings->viscosity_strength = 1.75f * FACTOR;
     mouse_click_strength = 50000.0f;
     simulation_early_compute.SetUniformBlockDirty("Settings");
