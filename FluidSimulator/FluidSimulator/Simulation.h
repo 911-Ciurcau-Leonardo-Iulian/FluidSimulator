@@ -12,10 +12,11 @@
 #define SIMULATION_PARAM_FACTOR 4.0f
 #define SCREEN_WIDTH 2500
 #define SCREEN_HEIGHT 1400
-#define RUN_MPI 0
+#define RUN_MPI 1
 
 #if RUN_MPI
 #include <mpi.h>
+#include "MpiWorker2.h"
 #else
 #include "ThreadPool.h"
 #endif
@@ -32,7 +33,7 @@ struct Simulation
         physics.interactionInputRadius = 50.0f;
         physics.interactionInputStrength = 1000.0f;
         physics.gravity = 40.0f * SIMULATION_PARAM_FACTOR;
-        physics.collisionDamping = 0.4f;
+        physics.collisionDamping = 0.25f;
         physics.smoothingRadius = 2.75f * SIMULATION_PARAM_FACTOR;
         physics.targetDensity = 6.f * SIMULATION_PARAM_FACTOR;
         physics.pressureMultiplier = 30.0f * SIMULATION_PARAM_FACTOR;
@@ -74,6 +75,12 @@ struct Simulation
         physics.boundsSize = { SCREEN_WIDTH, SCREEN_HEIGHT };
         // Init display
         // display.Init(this);
+
+#if RUN_MPI
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Ssend(&physics.numParticles, 1, MPI_INT, index + 1, 0, MPI_COMM_WORLD);
+        }
+#endif
     }
 
     void Update(GLFWwindow* window, float currentDeltaTime)
@@ -174,19 +181,71 @@ struct Simulation
 #else
     void RunSimulationStepMPI()
     {
-        ExternalForcesMPI();
+        unsigned int particle_count = physics.numParticles;
+        MPI_Status status;
 
-        for (int i = 0; i < physics.numParticles; i++)
-        {
-            physics.UpdateSpatialHash(i);
+        MpiWorkerRange* ranges = new MpiWorkerRange[mpiWorkersCount];
+        unsigned int* ranges_size = new unsigned int[mpiWorkersCount];
+
+        // Send the physics params
+        size_t parameter_size = offsetof(Physics, Positions);
+        int per_worker_count = particle_count / mpiWorkersCount;
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Ssend(&physics, parameter_size / sizeof(int), MPI_INT, index + 1, 0, MPI_COMM_WORLD);
+            ranges[index].start = index * per_worker_count;
+            ranges[index].end = (index + 1) * per_worker_count;
+            if (index == mpiWorkersCount - 1) {
+                ranges[index].end = particle_count;
+            }
+            ranges_size[index] = ranges[index].end - ranges[index].start;
+            MPI_Ssend(&ranges[index], 2, MPI_INT, index + 1, 0, MPI_COMM_WORLD);
+        }
+
+        for (int index = 0; index < particle_count; index++) {
+            physics.ExternalForces(index);
+            physics.UpdateSpatialHash(index);
         }
 
         physics.GpuSortAndCalculateOffsets();
 
-        CalculateDensityMPI();
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Ssend(physics.Velocities.data(), particle_count * 2, MPI_FLOAT, index + 1, 0, MPI_COMM_WORLD);
+            MPI_Ssend(physics.PredictedPositions.data(), particle_count * 2, MPI_FLOAT, index + 1, 0, MPI_COMM_WORLD);
+            MPI_Ssend(physics.SpatialIndices.data(), particle_count * 3, MPI_UINT32_T, index + 1, 0, MPI_COMM_WORLD);
+            MPI_Ssend(physics.SpatialOffsets.data(), particle_count, MPI_UINT32_T, index + 1, 0, MPI_COMM_WORLD);
+        }
+
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Recv(physics.Densities.data() + ranges[index].start, ranges_size[index] * 2, MPI_FLOAT, index + 1, 0, MPI_COMM_WORLD, &status);
+        }
+
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Ssend(physics.Densities.data(), particle_count * 2, MPI_FLOAT, index + 1, 0, MPI_COMM_WORLD);
+        }
+
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Recv(physics.Velocities.data() + ranges[index].start, ranges_size[index] * 2, MPI_FLOAT, index + 1, 0, MPI_COMM_WORLD, &status);
+        }
+
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Ssend(physics.Velocities.data(), particle_count * 2, MPI_FLOAT, index + 1, 0, MPI_COMM_WORLD);
+        }
+
+        for (int index = 0; index < mpiWorkersCount; index++) {
+            MPI_Recv(physics.Velocities.data() + ranges[index].start, ranges_size[index] * 2, MPI_FLOAT, index + 1, 0, MPI_COMM_WORLD, &status);
+        }
+
+        for (int index = 0; index < particle_count; index++) {
+            physics.UpdatePositions(index);
+        }
+
+        /*CalculateDensityMPI();
         CalculatePressureForceMPI();
-        CalculateViscosityMPI();
-        UpdatePositionsMPI();
+        CalculateViscosityMPI();*/
+        //UpdatePositionsMPI();
+
+        delete[] ranges;
+        delete[] ranges_size;
     }
 
     void ExternalForcesMPI()

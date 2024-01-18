@@ -21,9 +21,9 @@ void MpiWorker::run()
 
 
         MPI_Recv(&batchSize, 1, MPI_INT, 0, 1, MPI_COMM_WORLD, &status);
-        Velocities.resize(batchSize);
+        Velocities.resize(numParticles);
         MPI_Recv(Velocities.data(), batchSize * 2, MPI_FLOAT, 0, 2, MPI_COMM_WORLD, &status);
-        Positions.resize(batchSize);
+        Positions.resize(numParticles);
         MPI_Recv(Positions.data(), batchSize * 2, MPI_FLOAT, 0, 3, MPI_COMM_WORLD, &status);
         MPI_Recv(&deltaTime , 1, MPI_FLOAT, 0, 4, MPI_COMM_WORLD, &status);
         MPI_Recv(&gravity , 1, MPI_FLOAT, 0, 5, MPI_COMM_WORLD, &status);
@@ -31,7 +31,7 @@ void MpiWorker::run()
         MPI_Recv(&interactionInputPoint, 2, MPI_FLOAT, 0, 7, MPI_COMM_WORLD, &status);
         MPI_Recv(&interactionInputRadius, 1, MPI_FLOAT, 0, 8, MPI_COMM_WORLD, &status);
 
-        PredictedPositions.resize(batchSize);
+        PredictedPositions.resize(numParticles);
 
         for (int i = 0; i < batchSize; i++)
         {
@@ -50,6 +50,8 @@ void MpiWorker::run()
 
         // CalculateDensity
 
+        MPI_Recv(PredictedPositions.data(), numParticles * 2, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
+
 
         MPI_Recv(&smoothingRadius, 1, MPI_FLOAT, 0, 11, MPI_COMM_WORLD, &status);
         MPI_Recv(&numParticles, 1, MPI_UINT32_T, 0, 12, MPI_COMM_WORLD, &status);
@@ -61,7 +63,7 @@ void MpiWorker::run()
         MPI_Recv(&SpikyPow3ScalingFactor, 1, MPI_FLOAT, 0, 16, MPI_COMM_WORLD, &status);
 
 
-        Densities.resize(batchSize);
+        Densities.resize(numParticles);
 
         for (int i = 0; i < batchSize; i++)
         {
@@ -80,6 +82,8 @@ void MpiWorker::run()
 
         MPI_Send(Densities.data(), batchSize * 2, MPI_FLOAT, 0, 17, MPI_COMM_WORLD);
 
+        MPI_Recv(Densities.data(), numParticles * 2, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
+        MPI_Recv(Velocities.data(), numParticles * 2, MPI_FLOAT, 0, 0, MPI_COMM_WORLD, &status);
 
         // CalculatePressureForce
 
@@ -198,6 +202,21 @@ void MpiWorker::CalculateDensity(int id,
     );
 }
 
+
+static const Int2 offsets2D[9] =
+{
+    {-1, 1},
+    {0, 1},
+    {1, 1},
+    {-1, 0},
+    {0, 0},
+    {1, 0},
+    {-1, -1},
+    {0, -1},
+    {1, -1},
+};
+
+
 Float2 MpiWorker::CalculateDensityForPos(Float2 pos,
     float smoothingRadius,
     std::vector<ImU32>& SpatialOffsets,
@@ -215,7 +234,7 @@ Float2 MpiWorker::CalculateDensityForPos(Float2 pos,
     // Neighbour search
     for (int i = 0; i < 9; i++)
     {
-        ImU32 hash = Physics::HashCell2D(originCell + Physics::offsets2D[i]);
+        ImU32 hash = Physics::HashCell2D(originCell + offsets2D[i]);
         ImU32 key = Physics::KeyFromHash(hash, numParticles);
         ImU32 currIndex = SpatialOffsets[key];
         while (currIndex < numParticles)
@@ -292,7 +311,7 @@ void MpiWorker::CalculatePressureForce(int id, ImU32 numParticles, std::vector<F
     // Neighbour search
     for (int i = 0; i < 9; i++)
     {
-        ImU32 hash = Physics::HashCell2D(originCell + Physics::offsets2D[i]);
+        ImU32 hash = Physics::HashCell2D(originCell + offsets2D[i]);
         ImU32 key = Physics::KeyFromHash(hash, numParticles);
         ImU32 currIndex = SpatialOffsets[key];
 
@@ -390,7 +409,7 @@ void MpiWorker::CalculateViscosity(
 
     for (int i = 0; i < 9; i++)
     {
-        ImU32 hash = Physics::HashCell2D(originCell + Physics::offsets2D[i]);
+        ImU32 hash = Physics::HashCell2D(originCell + offsets2D[i]);
         ImU32 key = Physics::KeyFromHash(hash, numParticles);
         ImU32 currIndex = SpatialOffsets[key];
 

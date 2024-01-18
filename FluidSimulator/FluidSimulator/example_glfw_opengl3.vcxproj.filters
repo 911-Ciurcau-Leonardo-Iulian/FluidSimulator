@@ -58,6 +58,9 @@
     <ClCompile Include="ThreadPool.cpp">
       <Filter>sources</Filter>
     </ClCompile>
+    <ClCompile Include="MpiWorker2.cpp">
+      <Filter>sources</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\imconfig.h">
@@ -86,6 +89,7 @@
     <ClInclude Include="ParticleSpawner.h" />
     <ClInclude Include="MpiWorker.h" />
     <ClInclude Include="ThreadPool.h" />
+    <ClInclude Include="MpiWorker2.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="..\README.txt" />

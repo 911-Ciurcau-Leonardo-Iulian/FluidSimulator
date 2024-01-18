@@ -171,6 +171,7 @@
     <ClCompile Include="fluidSimulatorWindow.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="MpiWorker.cpp" />
+    <ClCompile Include="MpiWorker2.cpp" />
     <ClCompile Include="particle.cpp" />
     <ClCompile Include="ParticleSpawner.cpp" />
     <ClCompile Include="physics.cpp" />
@@ -187,6 +188,7 @@
     <ClInclude Include="..\..\backends\imgui_impl_opengl3_loader.h" />
     <ClInclude Include="fluidSimulatorWindow.h" />
     <ClInclude Include="MpiWorker.h" />
+    <ClInclude Include="MpiWorker2.h" />
     <ClInclude Include="particle.h" />
     <ClInclude Include="ParticleSpawner.h" />
     <ClInclude Include="physics.h" />

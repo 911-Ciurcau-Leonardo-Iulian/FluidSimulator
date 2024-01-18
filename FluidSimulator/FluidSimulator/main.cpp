@@ -32,7 +32,8 @@
 
 #if RUN_MPI
 #include <mpi.h>
-#include "MpiWorker.h"
+//#include "MpiWorker.h"
+#include "MpiWorker2.h"
 #endif
 
 static void glfw_error_callback(int error, const char* description)
@@ -54,8 +55,8 @@ int main(int, char**)
 
     if (me > 0)
     {
-        MpiWorker worker(me);
-        worker.run();
+        MpiWorker worker{};
+        worker.Run();
         MPI_Finalize();
         return 0; 
     }

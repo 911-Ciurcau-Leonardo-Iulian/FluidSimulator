@@ -25,7 +25,6 @@ struct Physics
     unsigned int groupWidth;
     unsigned int groupHeight;
     unsigned int stepIndex;
-    static const Int2 offsets2D[9];
 
     //Simulation params
     ImU32 numParticles;
