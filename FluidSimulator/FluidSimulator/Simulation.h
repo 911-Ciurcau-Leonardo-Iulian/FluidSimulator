@@ -10,9 +10,9 @@
 #include <thread>
 
 #define SIMULATION_PARAM_FACTOR 4.0f
-#define SCREEN_WIDTH 1920
-#define SCREEN_HEIGHT 920
-#define RUN_MPI 1
+#define SCREEN_WIDTH 2500
+#define SCREEN_HEIGHT 1400
+#define RUN_MPI 0
 
 #if RUN_MPI
 #include <mpi.h>

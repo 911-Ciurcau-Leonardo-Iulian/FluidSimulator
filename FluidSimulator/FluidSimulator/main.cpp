@@ -44,6 +44,8 @@ static void glfw_error_callback(int error, const char* description)
 int main(int, char**)
 {
 #if RUN_MPI
+    //_sleep(10000);
+
     MPI_Init(0, 0);
     int me;
     int nrProcs;
@@ -92,7 +94,7 @@ int main(int, char**)
         return 1;
     glfwMakeContextCurrent(window);
     glfwWindowHint(GLFW_DECORATED, GLFW_FALSE);
-    glfwSwapInterval(1); // Enable vsync
+    glfwSwapInterval(0); // Enable vsync
 
     // Setup Dear ImGui context
     IMGUI_CHECKVERSION();

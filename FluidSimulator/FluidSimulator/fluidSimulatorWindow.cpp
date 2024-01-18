@@ -108,11 +108,8 @@ void FluidSimulatorWindow::drawParticle(Float2 position, Float2 velocity)
     static float MAX_SPEED = 0.0f;
     MAX_SPEED = std::max(MAX_SPEED, speed);
 
-    speed = std::min(speed, 2000.f);
-    float percentage = speed / 2000.f;
-    float percentage_sq = percentage * percentage;
-    float interpolation_factor = 0.0f;
-    percentage = percentage_sq * interpolation_factor + percentage * (1 - interpolation_factor);
+    speed = std::min(speed, 1000.f);
+    float percentage = speed / 1000.f;
     size_t heatmapIndex = percentage * (heatmap.size() - 1);
     auto color = heatmap[heatmapIndex];
     ImU32 strokeColor = IM_COL32(255, 255, 255, 255);
