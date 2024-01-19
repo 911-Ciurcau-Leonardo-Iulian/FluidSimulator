@@ -136,6 +136,9 @@ int main(int, char**)
         ImGui_ImplGlfw_NewFrame();
         ImGui::NewFrame();
 
+        int display_w, display_h;
+        glfwGetFramebufferSize(window, &display_w, &display_h);
+
         /*{
             static float f = 0.0f;
             static int counter = 0;
@@ -167,12 +170,113 @@ int main(int, char**)
             fluidSimulatorWindow.simulation.SetInitialSettingsData();
         }
 
-        ImGui::GetWindowDrawList()->AddCircle(ImGui::GetMousePos(), general_settings->interaction_input_radius / 4000.0f * 2500.f / 2.0f, IM_COL32(255, 30, 30, 255));
+        auto convert_ndc_to_imgui = [&](Float2 position) {
+            Float2 multiply_factor = { display_w / 4000.0f, display_h / 4000.0f };
+            position.y = -position.y;
+            position += 2000.0f;
+            return position * multiply_factor;
+        };
+
+        auto convert_float4_to_color = [&](Float4 color) {
+            return IM_COL32(color.x * 255.0f, color.y * 255.0f, color.z * 255.0f, color.w * 255.0f);
+        };
+
+        auto display_gradient = [&](Float2 top_left, Float2 bottom_right, Float4 left_color, Float4 right_color, bool imgui_positions) {
+            ImDrawList* draw_list = ImGui::GetWindowDrawList();
+            if (!imgui_positions) {
+                top_left = convert_ndc_to_imgui(top_left);
+                bottom_right = convert_ndc_to_imgui(bottom_right);
+            }
+
+            ImU32 imgui_left = convert_float4_to_color(left_color);
+            ImU32 imgui_right = convert_float4_to_color(right_color);
+            draw_list->AddRectFilledMultiColor(
+                top_left,
+                bottom_right,
+                imgui_left,
+                imgui_right,
+                imgui_right,
+                imgui_left
+            );
+        };
+
+        auto display_gradient4 = [&](
+            Float2 top_left,
+            Float2 bottom_right,
+            HeatmapEntry first,
+            HeatmapEntry second,
+            HeatmapEntry third,
+            HeatmapEntry fourth,
+            bool imgui_positions
+        ) {
+            Float2 current_gradient_start = top_left;
+            if (first.percentage > 0.0f) {
+                Float2 size = bottom_right - top_left;
+                size.x *= first.percentage;
+                display_gradient(current_gradient_start, current_gradient_start + size, first.color, first.color, imgui_positions);
+                current_gradient_start.x += size.x;
+            }
+
+            Float2 size = bottom_right - top_left;
+            size.x *= second.percentage - first.percentage;
+            display_gradient(current_gradient_start, current_gradient_start + size, first.color, second.color, imgui_positions);
+            current_gradient_start.x += size.x;
+
+            size = bottom_right - top_left;
+            size.x *= third.percentage - second.percentage;
+            display_gradient(current_gradient_start, current_gradient_start + size, second.color, third.color, imgui_positions);
+            current_gradient_start.x += size.x;
+
+            size = bottom_right - top_left;
+            size.x *= fourth.percentage - third.percentage;
+            display_gradient(current_gradient_start, current_gradient_start + size, third.color, fourth.color, imgui_positions);
+            current_gradient_start.x += size.x;
+
+            if (fourth.percentage < 1.0f) {
+                size = bottom_right - top_left;
+                size.x *= 1.0f - fourth.percentage;
+                display_gradient(current_gradient_start, current_gradient_start + size, fourth.color, fourth.color, imgui_positions);
+            }
+        };
+
+        ImColor colorTopLeft = IM_COL32(255, 0, 0, 255);
+        ImColor colorTopRight = IM_COL32(255, 0, 0, 255);
+        ImColor colorBottomRight = IM_COL32(0, 255, 0, 255);
+        ImColor colorBottomLeft = IM_COL32(0, 255, 0, 255);
+
+        ImDrawList* draw_list = ImGui::GetWindowDrawList();
+        draw_list->AddCircle(ImGui::GetMousePos(), general_settings->interaction_input_radius / 4000.0f * display_w / 2.0f, IM_COL32(255, 30, 30, 255));
+        Float2 obstacle_pos = general_settings->obstacle_centre;
+        Float2 obstacle_size = general_settings->obstacle_size;
+        draw_list->AddRect(convert_ndc_to_imgui(obstacle_pos - obstacle_size), convert_ndc_to_imgui(obstacle_pos + obstacle_size), IM_COL32(20, 180, 30, 255));
+        std::vector<HeatmapEntry>& heatmap_entries = fluidSimulatorWindow.simulation.GetHeatmapEntries();
+
+        if (ImGui::ColorEdit4("First", (float*)&heatmap_entries[0].color, ImGuiColorEditFlags_NoInputs)) {
+            fluidSimulatorWindow.simulation.RecalculateHeatmap();
+        }
+        if (ImGui::ColorEdit4("Second", (float*)&heatmap_entries[1].color, ImGuiColorEditFlags_NoInputs)) {
+            fluidSimulatorWindow.simulation.RecalculateHeatmap();
+        }
+        if (ImGui::ColorEdit4("Third", (float*)&heatmap_entries[2].color, ImGuiColorEditFlags_NoInputs)) {
+            fluidSimulatorWindow.simulation.RecalculateHeatmap();
+        }
+        if (ImGui::ColorEdit4("Fourth", (float*)&heatmap_entries[3].color, ImGuiColorEditFlags_NoInputs)) {
+            fluidSimulatorWindow.simulation.RecalculateHeatmap();
+        }
+
+        ImVec2 draw_position = ImGui::GetCursorPos();
+        Float2 float_draw_position = { draw_position.x, draw_position.y };
+        display_gradient4(
+            float_draw_position,
+            float_draw_position + Float2{ 800, 50 },
+            heatmap_entries[0],
+            heatmap_entries[1],
+            heatmap_entries[2],
+            heatmap_entries[3],
+            true
+        );
 
         ImGui::End();
-
-        int display_w, display_h;
-        glfwGetFramebufferSize(window, &display_w, &display_h);
 
         // Rendering
         ImGui::Render();       

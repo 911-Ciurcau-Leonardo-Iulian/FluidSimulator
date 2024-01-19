@@ -20,6 +20,6 @@ struct GeneralSettings {
     Float2 interaction_input_point;
     float interaction_input_strength;
     float interaction_input_radius;
-    //Float2 obstacleSize;
-    //Float2 obstacleCentre;
+    Float2 obstacle_size;
+    Float2 obstacle_centre;
 };

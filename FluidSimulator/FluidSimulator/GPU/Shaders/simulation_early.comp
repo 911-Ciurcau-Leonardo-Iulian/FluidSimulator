@@ -49,6 +49,8 @@ struct SpatialIndex {
     uint key;
 };
 
+uniform float aspect_ratio;
+
 layout(std430, binding = 4) writeonly buffer _SpatialIndices
 {
     SpatialIndex SpatialIndices[];
@@ -62,6 +64,7 @@ vec2 CalculateExternalForces(vec2 pos, vec2 velocity)
     // Input interactions modify gravity
     if (interaction_input_strength != 0) {
         vec2 input_point_offset = interaction_input_point - pos;
+        input_point_offset.x *= aspect_ratio;
         float sqr_dst = dot(input_point_offset, input_point_offset);
         if (sqr_dst < interaction_input_radius * interaction_input_radius)
         {

@@ -142,3 +142,18 @@ void ComputeShader::SetUniformBlockDirty(const char* name)
     }
     uniform_blocks[index].dirty = true;
 }
+
+void ComputeShader::SetBool(const char* name, bool value) const
+{
+    SetInt(name, (int)value);
+}
+
+void ComputeShader::SetInt(const char* name, int value) const
+{
+    glUniform1i(glGetUniformLocation(program_id, name), value);
+}
+
+void ComputeShader::SetFloat(const char* name, float value) const
+{
+    glUniform1f(glGetUniformLocation(program_id, name), value);
+}

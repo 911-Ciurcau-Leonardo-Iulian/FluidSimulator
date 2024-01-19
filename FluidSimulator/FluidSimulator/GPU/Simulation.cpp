@@ -125,14 +125,13 @@ void Simulation::Initialize()
 
     render_vertex_buffer = VertexBuffer(DataType::Float2, 6);
     circle_alpha_texture = CreateCircleAlphaTexture(256, 256, 1.0f);
-    std::vector<HeatmapEntry> entries = {
+    heatmap_entries = {
         { Float4{28 / 255.0f, 70 / 255.0f, 158 / 255.0f, 1.0f}, 0.15f },
         { Float4{94 / 255.0f, 190 / 255.0f, 149 / 255.0f, 1.0f}, 0.5f},
         { Float4{200 / 255.0f, 200 / 255.0f, 17 / 255.0f, 1.0f}, 0.70f},
         { Float4{200 / 255.0f, 73 / 255.0f, 43 / 255.0f, 1.0f}, 1.0f}
     };
-    std::vector<UChar4> heatmap_values = ConstructHeatmap(1024, entries);
-    heatmap_texture.SetData(DataType::UNorm4, 1024, heatmap_values.data());
+    RecalculateHeatmap();
     circle_alpha_texture.Bind(0);
     heatmap_texture.Bind(1);
     particle_count = 50'000;
@@ -148,6 +147,12 @@ void Simulation::Initialize()
     SetInitialSettingsData();
 
     gpu_sort.Initialize();
+}
+
+void Simulation::RecalculateHeatmap()
+{
+    std::vector<UChar4> heatmap_values = ConstructHeatmap(1024, heatmap_entries);
+    heatmap_texture.SetData(DataType::UNorm4, 1024, heatmap_values.data());
 }
 
 void Simulation::SetInitialSettingsData()
@@ -166,6 +171,10 @@ void Simulation::SetInitialSettingsData()
     settings->target_density = 113.0f * FACTOR;
     settings->viscosity_strength = 1.75f * FACTOR;
     mouse_click_strength = 50000.0f;
+
+    settings->obstacle_centre = Float2(1000.0f, -500.0f);
+    settings->obstacle_size = Float2(300.0f, 800.0f);
+
     simulation_early_compute.SetUniformBlockDirty("Settings");
 }
 
@@ -179,7 +188,9 @@ void Simulation::FrameCompute()
     predicted_position_buffer.Bind(2);
     spatial_offsets.Bind(3);
     spatial_indices.Bind(4);
-    simulation_early_compute.BindAndDispatch(particle_count, 1, 1, false);
+    simulation_early_compute.Bind(false);
+    simulation_early_compute.SetFloat("aspect_ratio", aspect_ratio);
+    simulation_early_compute.Dispatch(particle_count, 1, 1);
 
     // GPU spatial sorting
     gpu_sort.Execute(spatial_indices, spatial_offsets, particle_count);
@@ -251,7 +262,7 @@ void Simulation::SetFrameParameters(Float2 normalized_mouse_pos, bool is_left_mo
     float interaction_strength = 0;
     if (is_left_mouse_pressed || is_right_mouse_pressed)
     {
-        interaction_strength = is_left_mouse_pressed ? -mouse_click_strength : mouse_click_strength;
+        interaction_strength = is_right_mouse_pressed ? mouse_click_strength : -mouse_click_strength;
     }
 
     settings->interaction_input_point = normalized_mouse_pos * 2000.0f;

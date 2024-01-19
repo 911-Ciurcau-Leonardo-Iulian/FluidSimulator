@@ -43,6 +43,12 @@ public:
 
     void SetUniformBlockDirty(const char* name);
 
+    void SetBool(const char* name, bool value) const;
+
+    void SetInt(const char* name, int value) const;
+
+    void SetFloat(const char* name, float value) const;
+
 
 private:
     std::vector<UniformBlock> uniform_blocks;

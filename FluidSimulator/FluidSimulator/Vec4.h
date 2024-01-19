@@ -96,3 +96,12 @@ typedef Vec4<unsigned char> UChar4;
 inline float Dot(Float4 a, Float4 b) {
     return a.x * b.x + a.y * b.y + a.z * b.z + a.w * b.w;
 }
+
+inline Float4 Float4Color(unsigned char red, unsigned char green, unsigned char blue, unsigned char alpha) {
+    return Float4(
+        (float)red / 255.0f,
+        (float)green / 255.0f,
+        (float)blue / 255.0f,
+        (float)alpha / 255.0f
+    );
+}

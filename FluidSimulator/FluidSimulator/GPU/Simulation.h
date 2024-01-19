@@ -21,7 +21,13 @@ public:
         return &mouse_click_strength;
     }
 
+    std::vector<HeatmapEntry>& GetHeatmapEntries() {
+        return heatmap_entries;
+    }
+
     void Initialize();
+
+    void RecalculateHeatmap();
 
     void RenderParticles();
 
@@ -41,6 +47,8 @@ private:
     void FrameCompute();
 
     void SetInitialBufferData(size_t particle_count);
+
+    std::vector<HeatmapEntry> heatmap_entries;
 
     Shader render_shader;
     // This contains the sprite square vertices

@@ -19,9 +19,11 @@ layout(std140, binding = 0) uniform Settings {
     vec2 interaction_input_point;
     float interaction_input_strength;
     float interaction_input_radius;
-    //vec2 obstacle_size;
-    //vec2 obstacle_centre;
+    vec2 obstacle_size;
+    vec2 obstacle_centre;
 };
+
+#define POSITION_FACTOR 2000.0f
 
 // Constants used for hashing
 const uint hashK1 = 15823;
@@ -228,42 +230,43 @@ void HandleCollisions(uint id) {
 	vec2 vel = Velocities[id];
 
 	// Keep particle inside bounds
-	if (pos.x < -1.0f * 2000.0f)
+	if (pos.x < -1.0f * POSITION_FACTOR)
 	{
-		pos.x = -1.0f * 2000;
+		pos.x = -1.0f * POSITION_FACTOR;
 		vel.x *= -1 * collision_damping;
 	}
-    if (pos.x > 1.0f * 2000)
+    if (pos.x > 1.0f * POSITION_FACTOR)
     {
-        pos.x = 1.0f * 2000;
+        pos.x = 1.0f * POSITION_FACTOR;
         vel.x *= -1 * collision_damping;
     }
-	if (pos.y < -1.0f * 2000)
+	if (pos.y < -1.0f * POSITION_FACTOR)
 	{
-		pos.y = -1.0f * 2000;
+		pos.y = -1.0f * POSITION_FACTOR;
 		vel.y *= -1 * collision_damping;
 	}
-    if (pos.y > 1.0f * 2000)
+    if (pos.y > 1.0f * POSITION_FACTOR)
     {
-        pos.y = 1.0f * 2000;
+        pos.y = 1.0f * POSITION_FACTOR;
         vel.y *= -1 * collision_damping;
     }
 
 	// Collide particle against the test obstacle
-//	const vec2 obstacleHalfSize = obstacleSize * 0.5;
-//	vec2 obstacleEdgeDst = obstacleHalfSize - abs(pos - obstacleCentre);
-//
-//	if (obstacleEdgeDst.x >= 0 && obstacleEdgeDst.y >= 0)
-//	{
-//		if (obstacleEdgeDst.x < obstacleEdgeDst.y) {
-//			pos.x = obstacleHalfSize.x * sign(pos.x - obstacleCentre.x) + obstacleCentre.x;
-//			vel.x *= -1 * collisionDamping;
-//		}
-//		else {
-//			pos.y = obstacleHalfSize.y * sign(pos.y - obstacleCentre.y) + obstacleCentre.y;
-//			vel.y *= -1 * collisionDamping;
-//		}
-//	}
+    vec2 obstacle_min = obstacle_centre - obstacle_size;
+    vec2 obstacle_max = obstacle_centre + obstacle_size;
+    vec2 particle_obstacle_distance = obstacle_centre - pos;
+    vec2 absolute_distance = abs(particle_obstacle_distance);
+	if (absolute_distance.x < obstacle_size.x && absolute_distance.y < obstacle_size.y) {
+        vec2 absolute_percentages = absolute_distance / obstacle_size;
+        if (absolute_percentages.x > absolute_percentages.y) {
+            pos.x = -1 * obstacle_size.x * sign(particle_obstacle_distance.x) + obstacle_centre.x;
+            vel.x *= -1 * collision_damping;
+        }
+        else {
+            pos.y = -1 * obstacle_size.y * sign(particle_obstacle_distance.y) + obstacle_centre.y;
+            vel.y *= -1 * collision_damping;
+        }
+    }
 
 	// Update position and velocity
 	Positions[id] = pos;

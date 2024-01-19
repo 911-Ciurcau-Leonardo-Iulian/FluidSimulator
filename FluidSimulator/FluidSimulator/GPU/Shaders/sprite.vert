@@ -11,6 +11,8 @@ layout(std430, binding = 1) buffer _Velocities
 
 layout (location = 0) in vec2 aPos;
 
+#define POSITION_FACTOR 2000.0f
+
 uniform float scale;
 uniform float aspect_ratio;
 uniform float max_speed;
@@ -55,5 +57,5 @@ void main()
     vertex_color = texture(Heatmap, speedT);
     uint vertex_id = gl_VertexID % 6;
     uv = uvs[vertex_id];
-    gl_Position = vec4(Positions[instanceID] / 2000.0f + vertex_positions[vertex_id], 0.0, 1.0);
+    gl_Position = vec4(Positions[instanceID] / POSITION_FACTOR + vertex_positions[vertex_id], 0.0, 1.0);
 }
